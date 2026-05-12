@@ -283,7 +283,7 @@ def render_encoder_view(user):
             else:
                 data = {
                     "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    # "username": user["username"],
+                    "username": user["username"],
                     "role_team": f"Encoder - {user.get('team', 'General')}",
                     "enc_name": st.session_state.enc_name.strip().upper(),
                     "store_name": st.session_state.store_name,
@@ -308,6 +308,7 @@ def render_encoder_view(user):
 
     df = get_sheet_data(selected_branch) if user["branch"] else pd.DataFrame()
     df = normalize_df_columns(df)
+    df_display = df.drop(columns=["username"], errors="ignore")
 
     if not df.empty:
         st.dataframe(df, use_container_width=True)
