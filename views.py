@@ -311,7 +311,7 @@ def render_encoder_view(user):
     df_display = df.drop(columns=["username"], errors="ignore")
 
     if not df.empty:
-        st.dataframe(df, use_container_width=True)
+        st.dataframe(df_display, use_container_width=True)
     else:
         st.info("ℹ️ No data found for this selection.")
 
