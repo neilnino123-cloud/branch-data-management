@@ -283,7 +283,7 @@ def render_encoder_view(user):
             else:
                 data = {
                     "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    "username": user["username"],
+                    # "username": user["username"],
                     "role_team": f"Encoder - {user.get('team', 'General')}",
                     "enc_name": st.session_state.enc_name.strip().upper(),
                     "store_name": st.session_state.store_name,
