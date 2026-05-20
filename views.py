@@ -135,7 +135,7 @@ def render_moderator_view(user):
     st.subheader("📝 All Transactions")
     st.caption("Complete transaction history")
 
-    df = get_sheet_data(selected_branch) if user["branch"] else pd.DataFrame()
+    df = get_sheet_data(user["branch"])
     df = normalize_df_columns(df)
     df_display = df.drop(columns=["username"], errors="ignore")
 
