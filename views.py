@@ -137,6 +137,8 @@ def render_moderator_view(user):
 
     df = get_sheet_data(user["branch"])
     df = normalize_df_columns(df)  # ✅ Normalize columns
+    df_display = df.drop(columns=["username"], errors="ignore")
+
 
     if not df.empty:
         st.dataframe(df, use_container_width=True)
