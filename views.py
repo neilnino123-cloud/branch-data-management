@@ -141,7 +141,7 @@ def render_moderator_view(user):
 
 
     if not df.empty:
-        st.dataframe(df, use_container_width=True)
+        st.dataframe(df_display, use_container_width=True)
 
         # ✅ TREND CHART SECTION
         st.divider()
