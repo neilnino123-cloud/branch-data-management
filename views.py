@@ -16,7 +16,8 @@ def render_login_form():
                 st.image(
                     "logo3.png" if st.file_uploader else "logo3.png", width=150)
             with st.container():
-                st.subheader("Please login to access your account",
+                st.subheader("Bibit Gamot Program")
+                st.caption("Please login to access your account",
                           text_alignment="center")
                 with st.form("login_form", border=False):
                     username = st.text_input(
