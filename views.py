@@ -16,7 +16,7 @@ def render_login_form():
                 st.image(
                     "logo3.png" if st.file_uploader else "logo3.png", width=150)
             with st.container():
-                st.header("Please login to access your account",
+                st.subheader("Please login to access your account",
                           text_alignment="center")
                 with st.form("login_form", border=False):
                     username = st.text_input(
