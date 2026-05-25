@@ -38,25 +38,25 @@ GOOGLE_SHEET_ID = st.secrets["general"]["GOOGLE_SHEET_ID"]
 
 # Product Database
 PRODUCT_LIST = {
-    "AMOXIL V": {"PC", "BOX"},
-    "ELEC V": {"PC", "BOX"},
+    "AMOXIL V": {"SACHET", "BOX"},
+    "ELEC V": {"SACHET", "BOX"},
     "NOROVIT": {"10ML", "50ML", "100ML"},
     "PPG": {"SACHET", "BOX"},
     "FEATHERSHINE": {"SACHET", "BOX"},
     "WORM X": {"PAD", "BOX"},
     "WORM X MAXX": {"PAD", "BOX"},
     "-- OTHERS --": {},
-    "DOXA-V": {"PC", "BOX", "KL", "PAD"},
-    "PARA-V": {"PC", "BOX", "KL", "PAD"},
-    "TRIMAX": {"PC", "BOX"},
-    "MULTIMAX": {"PC", "BOX"},
-    "ELECTROMAX": {"PC", "BOX"},
+    "DOXA-V": {"SACHET", "BOX", "KL", "PAD"},
+    "PARA-V": {"SACHET", "BOX", "KL", "PAD"},
+    "TRIMAX": {"SACHET", "BOX"},
+    "MULTIMAX": {"SACHET", "BOX"},
+    "ELECTROMAX": {"SACHET", "BOX"},
     "MULTIMAX D5": {"BOTTLE", "BOX"},
-    "DOX-C-LIN GOLD": {"PC", "BOX"},
-    "DOX-C-TRIN GOLD": {"PC", "BOX"},
+    "DOX-C-LIN GOLD": {"SACHET", "BOX"},
+    "DOX-C-TRIN GOLD": {"SACHET", "BOX"},
     "IRON-VET": {"BOTTLE", "BOX"},
-    "BULATIGOK SD": {"PC", "BOX"},
-    "TRIFAST": {"PC", "BOX"},
+    "BULATIGOK SD": {"SACHET", "BOX"},
+    "TRIFAST": {"SACHET", "BOX"},
     "ALAMYCIN LA": {"BOTTLE", "BOX"}
 }
 
