@@ -14,7 +14,7 @@ def render_login_form():
             with st.container(horizontal=True, horizontal_alignment="center"):
                 # ✅ Relative path for cloud compatibility
                 st.image(
-                    "logo3.png" if st.file_uploader else "logo3.png", width=150)
+                    "logo4.png" if st.file_uploader else "logo3.png", width=150)
             with st.container():
                 st.subheader("Bibit Gamot Program")
                 st.caption("Please login to access your account",
