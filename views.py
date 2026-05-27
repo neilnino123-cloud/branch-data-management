@@ -257,7 +257,7 @@ def render_encoder_view(user):
     # ✅ Reset form logic
     if st.session_state.get("reset_encoder_form", False):
         for key in ["enc_name", "store_name", "product", "uom", "qty", "notes"]:
-            st.session_state[key] = None if key == "qty" else "-- Select Customer --" if key == "store_name" else "-- Select Product --" if key == "product" else "-- Select Unit --" if key == "uom" else ""
+            st.session_state[key] = None if key == "qty" else "-- Full Name --" if key == "enc_name" else "-- Select Customer --" if key == "store_name" else "-- Select Product --" if key == "product" else "-- Select Unit --" if key == "uom" else ""
         st.session_state.reset_encoder_form = False
 
     with st.expander("📝 Add Data Here"):
