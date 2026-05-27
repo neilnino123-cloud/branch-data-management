@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 from database import append_to_sheet, get_sheet_data, get_all_sheets_data, normalize_df_columns
-from config import BRANCH_SHEETS, LEYTE_CUSTOMERS, SAMAR_CUSTOMERS, CALBAYOG_CUSTOMERS, SOLEY_CUSTOMERS, PRODUCT_LIST
+from config import BRANCH_SHEETS, LEYTE_CUSTOMERS, SAMAR_CUSTOMERS, CALBAYOG_CUSTOMERS, SOLEY_CUSTOMERS, PRODUCT_LIST, LEYTE_ENCODERS, SAMAR_ENCODERS, CALBAYOG_ENCODERS, SOLEY_ENCODERS
 import plotly.express as px
 
 
@@ -236,8 +236,14 @@ def render_encoder_view(user):
         .stTextInput input { text-transform: uppercase; }
         </style>""", unsafe_allow_html=True)
 
-        st.text_input("Enter Your Full Name*",
-                      key="enc_name", placeholder="Fullname")
+        emp_list = {
+            "TWMC LEYTE": LEYTE_ENCODERS,
+            "TWMC SAMAR": SAMAR_ENCODERS,
+            "TWMC CALBAYOG": CALBAYOG_ENCODERS,
+            "TWMC SOUTHERN LEYTE": SOLEY_ENCODERS
+        }.get(selected_branch, ["-- Full Name --"])
+
+        st.selectbox("Full Name", emp_list, key="enc_name")
 
         # Customer dropdown based on branch
         customer_list = {
