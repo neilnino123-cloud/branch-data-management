@@ -263,7 +263,7 @@ def render_encoder_view(user):
     with st.expander("📝 Add Data Here"):
         # ✅ Initialize session state defaults
         defaults = {
-            "enc_name": "", "store_name": "-- Select Customer --",
+            "enc_name": "-- Full Name --", "store_name": "-- Select Customer --",
             "product": "-- Select Product --", "uom": "-- Select Unit --",
             "qty": 0, "notes": ""
         }
