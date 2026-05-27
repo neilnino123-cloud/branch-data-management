@@ -197,6 +197,46 @@ def render_moderator_view(user):
         else:
             st.metric("Latest Submission", "N/A")
 
+def get_encoder_list(branch: str, team: str = None) -> list[str]:
+    """
+    🌍 Branch-agnostic encoder list generator.
+    Automatically handles dict-of-sets (LEYTE) and flat-lists (SAMAR, CALBAYOG, etc.)
+    """
+    # 🗂️ Centralized mapping: add new branches here only
+    BRANCH_ENCODER_MAP = {
+        "TWMC LEYTE": LEYTE_ENCODERS,
+        "TWMC SAMAR": SAMAR_ENCODERS,
+        "TWMC CALBAYOG": CALBAYOG_ENCODERS,
+        "TWMC SOUTHERN LEYTE": SOLEY_ENCODERS,
+    }
+    
+    source = BRANCH_ENCODER_MAP.get(branch)
+    if not source:
+        return ["-- Full Name --"]
+        
+    names = set()
+    
+    # 🔹 If dict-of-sets (e.g., LEYTE)
+    if isinstance(source, dict):
+        if team:
+            # Match display team name to internal key via USERS
+            team_key = next((k for k, v in USERS.items() 
+                             if v.get("branch") == branch and v.get("team") == team), None)
+            if team_key and team_key in source:
+                val = source[team_key]
+                names.update(val if isinstance(val, (set, list)) else {val})
+        else:
+            # Fallback: flatten all teams
+            for val in source.values():
+                names.update(val if isinstance(val, (set, list)) else {val})
+                
+    # 🔹 If flat list (e.g., SAMAR, CALBAYOG, SOLEY)
+    elif isinstance(source, list):
+        names.update(n for n in source if n and not n.startswith("--"))
+        
+    # ✅ Return sorted with consistent placeholder
+    return ["-- Full Name --"] + sorted(names) if names else ["-- Full Name --"]
+
 
 def render_encoder_view(user):
     with st.container(horizontal=True, horizontal_alignment="distribute"):
@@ -236,14 +276,9 @@ def render_encoder_view(user):
         .stTextInput input { text-transform: uppercase; }
         </style>""", unsafe_allow_html=True)
 
-        emp_list = {
-            "TWMC LEYTE": LEYTE_ENCODERS,
-            "TWMC SAMAR": SAMAR_ENCODERS,
-            "TWMC CALBAYOG": CALBAYOG_ENCODERS,
-            "TWMC SOUTHERN LEYTE": SOLEY_ENCODERS
-        }.get(selected_branch, ["-- Full Name --"])
-
-        st.selectbox("Enter Full Name*", emp_list, key="enc_name")
+        # ✅ Global dynamic encoder list (works for ANY branch)
+        emp_list = get_encoder_list(user["branch"], user.get("team"))
+        st.selectbox("Full Name", emp_list, key="enc_name")
 
         # Customer dropdown based on branch
         customer_list = {
