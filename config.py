@@ -61,55 +61,108 @@ PRODUCT_LIST = {
 }
 
 # Encoder Lists (per branch)
-LEYTE_ENCODERS = ["-- Full Name --",
-                  "BEN DADULA",
+LEYTE_ENCODERS = {
+        "ley_fats": {"BEN DADULA",
                   "GEE RIÑOS",
                   "GLAIZA MAE BANTANOS",
                   "GREGORIO CABELTE JR.",
                   "JAIME PACAYDE",
                   "JAYVEE BAGUNAS",
                   "LEIGHMARK DAGOHOY",
-                  "MELCHOR PALAJOREN",
-                  "LORRAINE ANGELA CABILIC",
-                  "LEONIL LIBY APOR"
-                  ]
+                  "MELCHOR PALAJOREN"},
+        "ley_dcat" : {"LORRAINE ANGELA CABILIC"},
+        "ley_gfs": {"LEONIL LIBY APOR"}
+                  }
 
-SAMAR_ENCODERS = ["-- Full Name --",
-                  "ALELOUR JABEGUERO",
-                  "ARIEL OBILLO",
-                  "ARISTEO ASI",
-                  "CLETUS JOMAR PENEDA",
-                  "DONALD CABO",
-                  "JOHN LAWRENCE GUASIS",
-                  "RALPH CARVAJAL",
-                  "REDELON ABARRO",
-                  "WENDYS LEGUA",
-                  "JEREEY NAVIDAD",
-                  "LOWELL LORENZO",
-                  "LUIS DURAN"]
+SAMAR_ENCODERS = {
+        "sam_fats" : {"ALELOUR JABEGUERO",
+                    "ARIEL OBILLO",
+                    "ARISTEO ASI",
+                    "CLETUS JOMAR PENEDA",
+                    "DONALD CABO",
+                    "JOHN LAWRENCE GUASIS",
+                    "RALPH CARVAJAL",
+                    "REDELON ABARRO",
+                    "WENDYS LEGUA"},
+        "sam_dcat" : {"JEREEY NAVIDAD",
+                    "LOWELL LORENZO"},
+        "sam_gfs" : {"LUIS DURAN"}
+                }
 
-CALBAYOG_ENCODERS = ["-- Full Name --",
-                  "ARCHIE CALUGCUGAN",
-                  "DELDRINE GORDO",
-                  "ELMER FUENTEBLANCA",
-                  "JOEMAR ROTAMULA",
-                  "JOMARI DOLON",
-                  "MICHAEL ABLAZO",
-                  "MICHAEL PANZO",
-                  "ROBERT BALISBISAN",
-                  "JASON CHIQUILLO",
-                  "JAYSON ARANDIA"]
+CALBAYOG_ENCODERS = {
+        "cal_fats" : {"ARCHIE CALUGCUGAN",
+                    "DELDRINE GORDO",
+                    "ELMER FUENTEBLANCA",
+                    "JOEMAR ROTAMULA",
+                    "JOMARI DOLON",
+                    "MICHAEL ABLAZO",
+                    "MICHAEL PANZO",
+                    "ROBERT BALISBISAN"},
+        "cal_dcat" : {"JASON CHIQUILLO"},
+        "cal_gfs" : {"JAYSON ARANDIA"}
+                    }
 
-SOLEY_ENCODERS = ["-- Full Name --",
-                  "ALJHON INDIENTE",
-                  "FELIX FRANCA",
-                  "J CARL VERTUDAZO",
-                  "JERWIN BATHAN",
-                  "JONNEL PENE",
-                  "JOVEN DEL ROSARIO",
-                  "MIKE ANTHONY MIER",
-                  "SANDY MORILLA",
-                  "RUEL MENIABLE"]
+SOLEY_ENCODERS = {
+        "sol_fats" : {"ALJHON INDIENTE",
+                    "FELIX FRANCA",
+                    "J CARL VERTUDAZO",
+                    "JERWIN BATHAN",
+                    "JONNEL PENE",
+                    "JOVEN DEL ROSARIO",
+                    "MIKE ANTHONY MIER"},
+        "sol_dcat" : {"SANDY MORILLA"},
+        "sol_gfs" : {"RUEL MENIABLE"}
+                }
+
+# LEYTE_ENCODERS = ["-- Full Name --",
+#                   "BEN DADULA",
+#                   "GEE RIÑOS",
+#                   "GLAIZA MAE BANTANOS",
+#                   "GREGORIO CABELTE JR.",
+#                   "JAIME PACAYDE",
+#                   "JAYVEE BAGUNAS",
+#                   "LEIGHMARK DAGOHOY",
+#                   "MELCHOR PALAJOREN",
+#                   "LORRAINE ANGELA CABILIC",
+#                   "LEONIL LIBY APOR"
+#                   ]
+
+# SAMAR_ENCODERS = ["-- Full Name --",
+#                   "ALELOUR JABEGUERO",
+#                   "ARIEL OBILLO",
+#                   "ARISTEO ASI",
+#                   "CLETUS JOMAR PENEDA",
+#                   "DONALD CABO",
+#                   "JOHN LAWRENCE GUASIS",
+#                   "RALPH CARVAJAL",
+#                   "REDELON ABARRO",
+#                   "WENDYS LEGUA",
+#                   "JEREEY NAVIDAD",
+#                   "LOWELL LORENZO",
+#                   "LUIS DURAN"]
+
+# CALBAYOG_ENCODERS = ["-- Full Name --",
+#                   "ARCHIE CALUGCUGAN",
+#                   "DELDRINE GORDO",
+#                   "ELMER FUENTEBLANCA",
+#                   "JOEMAR ROTAMULA",
+#                   "JOMARI DOLON",
+#                   "MICHAEL ABLAZO",
+#                   "MICHAEL PANZO",
+#                   "ROBERT BALISBISAN",
+#                   "JASON CHIQUILLO",
+#                   "JAYSON ARANDIA"]
+
+# SOLEY_ENCODERS = ["-- Full Name --",
+#                   "ALJHON INDIENTE",
+#                   "FELIX FRANCA",
+#                   "J CARL VERTUDAZO",
+#                   "JERWIN BATHAN",
+#                   "JONNEL PENE",
+#                   "JOVEN DEL ROSARIO",
+#                   "MIKE ANTHONY MIER",
+#                   "SANDY MORILLA",
+#                   "RUEL MENIABLE"]
 
 # Customer Lists (trimmed for brevity - keep your full lists)
 LEYTE_CUSTOMERS = ["-- Select Customer --",
