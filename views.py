@@ -278,7 +278,7 @@ def render_encoder_view(user):
 
         # ✅ Global dynamic encoder list (works for ANY branch)
         emp_list = get_encoder_list(user["branch"], user.get("team"))
-        st.selectbox("Full Name", emp_list, key="enc_name")
+        st.selectbox("Enter Full Name*", emp_list, key="enc_name")
 
         # Customer dropdown based on branch
         customer_list = {
@@ -310,8 +310,8 @@ def render_encoder_view(user):
         if st.button("Submit Data"):
             # Validation
             errors = []
-            if not st.session_state.enc_name.strip():
-                errors.append("Please enter your name")
+            if not st.session_state.enc_name == "-- Full Name --":
+                errors.append("Please enter your full name")
             if st.session_state.store_name == "-- Select Customer --":
                 errors.append("Please select a customer")
             if st.session_state.product == "-- Select Product --":
