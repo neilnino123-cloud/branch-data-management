@@ -4,7 +4,10 @@ from datetime import datetime
 from database import append_to_sheet, get_sheet_data, get_all_sheets_data, normalize_df_columns
 from config import BRANCH_SHEETS, LEYTE_CUSTOMERS, SAMAR_CUSTOMERS, CALBAYOG_CUSTOMERS, SOLEY_CUSTOMERS, PRODUCT_LIST, LEYTE_ENCODERS, SAMAR_ENCODERS, CALBAYOG_ENCODERS, SOLEY_ENCODERS, USERS
 import plotly.express as px
+from zoneinfo import ZoneInfo
 
+# Define Philippine Time
+PHT = ZoneInfo("Asia/Manila")
 
 def render_login_form():
     col1, col2, col3 = st.columns([4, 3, 4])
@@ -326,7 +329,7 @@ def render_encoder_view(user):
                     st.error(f"❌ {err}")
             else:
                 data = {
-                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "timestamp": datetime.now(PHT).strftime("%Y-%m-%d %H:%M:%S"),
                     "username": user["username"],
                     "role_team": f"Encoder - {user.get('team', 'General')}",
                     "enc_name": st.session_state.enc_name.strip().upper(),
