@@ -243,7 +243,7 @@ def render_encoder_view(user):
             "TWMC SOUTHERN LEYTE": SOLEY_ENCODERS
         }.get(selected_branch, ["-- Full Name --"])
 
-        st.selectbox("Full Name", emp_list, key="enc_name")
+        st.selectbox("Enter Full Name*", emp_list, key="enc_name")
 
         # Customer dropdown based on branch
         customer_list = {
@@ -253,7 +253,7 @@ def render_encoder_view(user):
             "TWMC SOUTHERN LEYTE": SOLEY_CUSTOMERS
         }.get(selected_branch, ["-- Select Customer --"])
 
-        st.selectbox("Enter Store Name", customer_list, key="store_name")
+        st.selectbox("Enter Store Name*", customer_list, key="store_name")
 
         # Product selection
         product_options = ["-- Select Product --"] + list(PRODUCT_LIST.keys())
