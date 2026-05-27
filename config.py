@@ -109,8 +109,9 @@ SOLEY_ENCODERS = {
                     "JERWIN BATHAN",
                     "JONNEL PENE",
                     "JOVEN DEL ROSARIO",
-                    "MIKE ANTHONY MIER"},
-        "sol_dcat" : {"SANDY MORILLA"},
+                    "MIKE ANTHONY MIER",
+                     "SANDY MORILLA"},
+        "sol_dcat" : {"JUDEAH RUBILLOS"},
         "sol_gfs" : {"RUEL MENIABLE"}
                 }
 
