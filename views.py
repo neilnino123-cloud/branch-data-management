@@ -310,7 +310,7 @@ def render_encoder_view(user):
         if st.button("Submit Data"):
             # Validation
             errors = []
-            if st.session_state.get("enc_name", "-- Full Name --") == "-- Full Name --":
+            if not st.session_state.get("enc_name", "-- Full Name --") == "-- Full Name --":
                 errors.append("Please enter your full name")
             if st.session_state.store_name == "-- Select Customer --":
                 errors.append("Please select a customer")
