@@ -61,7 +61,7 @@ PRODUCT_LIST = {
 }
 
 # Encoder Lists (per branch)
-LEYTE_ENCODERS = [
+LEYTE_ENCODERS = ["-- Full Name --",
                   "BEN DADULA",
                   "GEE RIÑOS",
                   "GLAIZA MAE BANTANOS",
