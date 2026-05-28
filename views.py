@@ -494,50 +494,41 @@ def render_encoder_view(user):
 def prepare_bar_chart_data(df: pd.DataFrame, branch_filter: str = None, 
                            encoder_filter: str = None, product_filter: str = None,
                            date_range: tuple = None) -> pd.DataFrame:
+    """Prepares dataframe for dynamic bar chart with multi-filter support."""
     if df.empty:
         return pd.DataFrame()
     
     df = df.copy()
     df.columns = df.columns.str.lower().str.strip().str.replace(" ", "_")
     
-    # 🔍 Find encoder column dynamically
-    enc_col = None
-    for col in ["enc_name", "encoder", "encoder_name", "fullname"]:
-        if col in df.columns:
-            enc_col = col
-            break
-    
     required = ["timestamp", "product", "quantity"]
-    if enc_col:
-        required.append(enc_col)
-        
+    if "enc_name" in df.columns:
+        required.append("enc_name")
     if not all(col in df.columns for col in required):
-        # Return data even without encoder column
-        if not all(col in df.columns for col in ["timestamp", "product", "quantity"]):
-            return pd.DataFrame()
+        return pd.DataFrame()
     
     # Filter by branch
     if branch_filter and branch_filter != "All Branches" and "source_branch" in df.columns:
         df = df[df["source_branch"] == branch_filter]
-    
-    # 🔧 Filter by encoder (use dynamic column name)
-    if encoder_filter and encoder_filter != "All Encoders" and enc_col:
-        df = df[df[enc_col] == encoder_filter]
-    
+        
+    # Filter by encoder
+    if encoder_filter and encoder_filter != "All Encoders" and "enc_name" in df.columns:
+        df = df[df["enc_name"] == encoder_filter]
+        
     # Filter by product
     if product_filter and product_filter != "All Products":
         df = df[df["product"] == product_filter]
-    
+        
     # Filter by date range
     if date_range and date_range[0] and date_range[1]:
         df["date_only"] = pd.to_datetime(df["timestamp"], errors="coerce").dt.date
         df = df[(df["date_only"] >= date_range[0]) & (df["date_only"] <= date_range[1])]
-    
-    # Aggregate - use dynamic encoder column
-    group_cols = [enc_col, "product"] if enc_col else ["product"]
+        
+    # Aggregate
+    group_cols = ["enc_name", "product"] if "enc_name" in df.columns else ["product"]
     if "source_branch" in df.columns and branch_filter == "All Branches":
         group_cols.append("source_branch")
-    
+        
     grouped = df.groupby(group_cols + ["date_only"])["quantity"].sum().reset_index()
     grouped = grouped.rename(columns={"date_only": "date", "quantity": "total_qty"})
     return grouped
