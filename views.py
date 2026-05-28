@@ -14,7 +14,7 @@ def prepare_trend_data(df: pd.DataFrame, branch_filter: str = None) -> pd.DataFr
     """Prepares dataframe for trend line chart with normalized columns."""
     if df.empty:
         return pd.DataFrame()
-
+        
     # ✅ Ensure lowercase columns
     df = df.copy()
     df.columns = df.columns.str.lower().str.strip().str.replace(" ", "_")
