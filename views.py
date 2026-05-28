@@ -119,40 +119,57 @@ def render_admin_view(user):
     # =============================================================================
     st.divider()
     st.subheader("📊 Sales Breakdown by Encoder & Product")
-    
+
     # ── Filter Controls ──
     col_f1, col_f2, col_f3, col_f4 = st.columns(4)
-    
+
     with col_f1:
         # Branch filter (reuse existing logic)
         branch_options = ["All Branches"] + list(BRANCH_SHEETS.keys())
         bar_branch = st.selectbox("Filter by Branch", branch_options, key="bar_branch")
-    
+
     with col_f2:
-        # Encoder filter (dynamic from data)
+        # # DEBUG: Check what columns exist
+        # st.write("📋 Available columns:", df.columns.tolist())
+        # if "enc_name" in df.columns:
+        #     st.write(f"✅ enc_name found! Unique values: {df['enc_name'].dropna().unique().tolist()}")
+        # else:
+        #     st.warning("❌ 'enc_name' column not found!")
+
+        # 🔍 Find encoder column (handle different naming conventions)
+        enc_col = None
+        for col in ["enc_name", "encoder", "encoder_name", "fullname", "full_name", "name"]:
+            if col in df.columns:
+                enc_col = col
+                break
+        
+        # Build encoder list
         encoders = ["All Encoders"]
-        if not df.empty and "enc_name" in df.columns:
-            encoders += sorted(df["enc_name"].dropna().unique().tolist())
+        if enc_col and not df.empty:
+            encoder_names = df[enc_col].dropna().unique().tolist()
+            encoder_names = [e for e in encoder_names if e and str(e).strip()]  # Remove empty/None
+            encoders += sorted(encoder_names)
+        
         bar_encoder = st.selectbox("Filter by Encoder", encoders, key="bar_encoder")
     
     with col_f3:
         # Product filter
         products = ["All Products"] + sorted(df["product"].dropna().unique().tolist()) if not df.empty else ["All Products"]
         bar_product = st.selectbox("Filter by Product", products, key="bar_product")
-    
+
     with col_f4:
         # Date range filter
         min_date = pd.to_datetime(df["timestamp"]).min().date() if not df.empty and "timestamp" in df.columns else None
         max_date = pd.to_datetime(df["timestamp"]).max().date() if not df.empty and "timestamp" in df.columns else None
         bar_date_range = st.date_input("Date Range", value=(min_date, max_date) if min_date and max_date else None, 
-                                       min_value=min_date, max_value=max_date, key="bar_date")
-    
+                                    min_value=min_date, max_value=max_date, key="bar_date")
+
     # ── Prepare Data ──
     # Handle date_input return type (tuple or single date)
     date_filter = bar_date_range if isinstance(bar_date_range, tuple) and len(bar_date_range) == 2 else None
     chart_df = prepare_bar_chart_data(df, branch_filter=bar_branch, encoder_filter=bar_encoder, 
-                                      product_filter=bar_product, date_range=date_filter)
-    
+                                    product_filter=bar_product, date_range=date_filter)
+
     # ── Render Chart ──
     if not chart_df.empty:
         # Determine color grouping
@@ -188,7 +205,7 @@ def render_admin_view(user):
     with col2:
         if "timestamp" in df.columns and not df["timestamp"].isna().all():
             latest = pd.to_datetime(df["timestamp"]).max()
-            st.metric("Latest Submission", latest.strftime("%m/%d %I:%M %p"))
+            st.metric("Latest Submission", latest.strftime("%m/%d %H:%M"))
         else:
             st.metric("Latest Submission", "N/A")
 
