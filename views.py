@@ -129,11 +129,21 @@ def render_admin_view(user):
         bar_branch = st.selectbox("Filter by Branch", branch_options, key="bar_branch")
 
     with col_f2:
-        # Encoder filter (dynamic from data)
-        encoders = ["All Encoders"]
-        if not df.empty and "enc_name" in df.columns:
-            encoders += sorted(df["enc_name"].dropna().unique().tolist())
-        bar_encoder = st.selectbox("Filter by Encoder", encoders, key="bar_encoder")
+    # 🔍 Find encoder column (handle different naming conventions)
+    enc_col = None
+    for col in ["enc_name", "encoder", "encoder_name", "fullname", "full_name", "name"]:
+        if col in df.columns:
+            enc_col = col
+            break
+    
+    # Build encoder list
+    encoders = ["All Encoders"]
+    if enc_col and not df.empty:
+        encoder_names = df[enc_col].dropna().unique().tolist()
+        encoder_names = [e for e in encoder_names if e and str(e).strip()]  # Remove empty/None
+        encoders += sorted(encoder_names)
+    
+    bar_encoder = st.selectbox("Filter by Encoder", encoders, key="bar_encoder")
 
     with col_f3:
         # Product filter
@@ -261,7 +271,7 @@ def render_moderator_view(user):
     col_f1, col_f2, col_f3 = st.columns(3)
 
     with col_f1:
-        encoders = ["All Encoders"] + sorted(df["enc_name"].dropna().unique().tolist()) if not df.empty and "enc_name" in df.columns else ["All Encoders"]
+        encoders = ["All Encoders"] + sorted(df["name"].dropna().unique().tolist()) if not df.empty and "enc_name" in df.columns else ["All Encoders"]
         bar_encoder = st.selectbox("Filter by Encoder", encoders, key=f"mod_bar_enc_{user['branch']}")
 
     with col_f2:
@@ -508,30 +518,35 @@ def prepare_trend_data(df: pd.DataFrame, branch_filter: str = None) -> pd.DataFr
 def prepare_bar_chart_data(df: pd.DataFrame, branch_filter: str = None, 
                            encoder_filter: str = None, product_filter: str = None,
                            date_range: tuple = None) -> pd.DataFrame:
-    """
-    Prepares dataframe for dynamic bar chart with multi-filter support.
-    """
     if df.empty:
         return pd.DataFrame()
     
     df = df.copy()
     df.columns = df.columns.str.lower().str.strip().str.replace(" ", "_")
     
-    # Required columns
+    # 🔍 Find encoder column dynamically
+    enc_col = None
+    for col in ["enc_name", "encoder", "encoder_name", "fullname"]:
+        if col in df.columns:
+            enc_col = col
+            break
+    
     required = ["timestamp", "product", "quantity"]
-    if "enc_name" in df.columns:
-        required.append("enc_name")
+    if enc_col:
+        required.append(enc_col)
+        
     if not all(col in df.columns for col in required):
-        return pd.DataFrame()
+        # Return data even without encoder column
+        if not all(col in df.columns for col in ["timestamp", "product", "quantity"]):
+            return pd.DataFrame()
     
     # Filter by branch
-    if branch_filter and branch_filter != "All Branches":
-        if "source_branch" in df.columns:
-            df = df[df["source_branch"] == branch_filter]
+    if branch_filter and branch_filter != "All Branches" and "source_branch" in df.columns:
+        df = df[df["source_branch"] == branch_filter]
     
-    # Filter by encoder
-    if encoder_filter and encoder_filter != "All Encoders" and "enc_name" in df.columns:
-        df = df[df["enc_name"] == encoder_filter]
+    # 🔧 Filter by encoder (use dynamic column name)
+    if encoder_filter and encoder_filter != "All Encoders" and enc_col:
+        df = df[df[enc_col] == encoder_filter]
     
     # Filter by product
     if product_filter and product_filter != "All Products":
@@ -542,8 +557,8 @@ def prepare_bar_chart_data(df: pd.DataFrame, branch_filter: str = None,
         df["date_only"] = pd.to_datetime(df["timestamp"], errors="coerce").dt.date
         df = df[(df["date_only"] >= date_range[0]) & (df["date_only"] <= date_range[1])]
     
-    # Aggregate: group by encoder + product + date for bar chart
-    group_cols = ["enc_name", "product"] if "enc_name" in df.columns else ["product"]
+    # Aggregate - use dynamic encoder column
+    group_cols = [enc_col, "product"] if enc_col else ["product"]
     if "source_branch" in df.columns and branch_filter == "All Branches":
         group_cols.append("source_branch")
     
