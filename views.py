@@ -56,6 +56,7 @@ def prepare_bar_chart_data(df: pd.DataFrame, branch_filter: str = None,
         if col in df.columns:
             enc_col = col
             break
+        
     
     required = ["timestamp", "product", "quantity"]
     if enc_col:
