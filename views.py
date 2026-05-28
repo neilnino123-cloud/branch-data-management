@@ -122,51 +122,51 @@ def render_admin_view(user):
     # ✅ Normalize columns for consistency
     df = normalize_df_columns(df)
 
-    if not df.empty:
-        st.dataframe(df, use_container_width=True)
+    # if not df.empty:
+    #     st.dataframe(df, use_container_width=True)
 
-        # ✅ TREND CHART SECTION
-        st.divider()
-        st.subheader("📈 Sales Trend by Product")
+    #     # ✅ TREND CHART SECTION
+    #     st.divider()
+    #     st.subheader("📈 Sales Trend by Product")
 
-        all_products = ["All Products"] + \
-            sorted(df["product"].dropna().unique().tolist())
-        selected_chart_product = st.selectbox(
-            "Filter by Product (Optional)", all_products, key="admin_chart_product")
+    #     all_products = ["All Products"] + \
+    #         sorted(df["product"].dropna().unique().tolist())
+    #     selected_chart_product = st.selectbox(
+    #         "Filter by Product (Optional)", all_products, key="admin_chart_product")
 
-        chart_df = prepare_trend_data(df, branch_filter=selected_branch)
+    #     chart_df = prepare_trend_data(df, branch_filter=selected_branch)
 
-        if not chart_df.empty:
-            if selected_chart_product != "All Products":
-                chart_df = chart_df[chart_df["product"]
-                                    == selected_chart_product]
+    #     if not chart_df.empty:
+    #         if selected_chart_product != "All Products":
+    #             chart_df = chart_df[chart_df["product"]
+    #                                 == selected_chart_product]
 
-            if not chart_df.empty:
-                fig = px.line(
-                    chart_df,
-                    x="date",
-                    y="quantity",
-                    color="product" if selected_chart_product == "All Products" else None,
-                    markers=True,
-                    title=f"Sales Trend - {selected_branch}" if selected_branch != "All Branches" else "Sales Trend - All Branches",
-                    labels={"quantity": "Total Quantity", "date": "Date",
-                            "product": "Product", "branch": "Branch"},
-                    height=400
-                )
-                fig.update_layout(
-                    hovermode="x unified",
-                    legend=dict(orientation="h", yanchor="bottom",
-                                y=1.02, xanchor="right", x=1),
-                    xaxis_title="Date",
-                    yaxis_title="Total Quantity"
-                )
-                st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.info("ℹ️ No data for selected product filter.")
-        else:
-            st.info("ℹ️ No trend data available.")
-    else:
-        st.info("ℹ️ No records yet.")
+    #         if not chart_df.empty:
+    #             fig = px.line(
+    #                 chart_df,
+    #                 x="date",
+    #                 y="quantity",
+    #                 color="product" if selected_chart_product == "All Products" else None,
+    #                 markers=True,
+    #                 title=f"Sales Trend - {selected_branch}" if selected_branch != "All Branches" else "Sales Trend - All Branches",
+    #                 labels={"quantity": "Total Quantity", "date": "Date",
+    #                         "product": "Product", "branch": "Branch"},
+    #                 height=400
+    #             )
+    #             fig.update_layout(
+    #                 hovermode="x unified",
+    #                 legend=dict(orientation="h", yanchor="bottom",
+    #                             y=1.02, xanchor="right", x=1),
+    #                 xaxis_title="Date",
+    #                 yaxis_title="Total Quantity"
+    #             )
+    #             st.plotly_chart(fig, use_container_width=True)
+    #         else:
+    #             st.info("ℹ️ No data for selected product filter.")
+    #     else:
+    #         st.info("ℹ️ No trend data available.")
+    # else:
+    #     st.info("ℹ️ No records yet.")
      
 
     # =============================================================================
