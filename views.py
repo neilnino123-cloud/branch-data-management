@@ -10,6 +10,37 @@ from zoneinfo import ZoneInfo
 # Define Philippine Time
 PHT = ZoneInfo("Asia/Manila")
 
+def prepare_trend_data(df: pd.DataFrame, branch_filter: str = None) -> pd.DataFrame:
+    """Prepares dataframe for trend line chart with normalized columns."""
+    if df.empty:
+        return pd.DataFrame()
+
+    # ✅ Ensure lowercase columns
+    df = df.copy()
+    df.columns = df.columns.str.lower().str.strip().str.replace(" ", "_")
+
+    # Verify required columns
+    required = ["timestamp", "product", "quantity"]
+    if not all(col in df.columns for col in required):
+        return pd.DataFrame()
+
+    # Filter by branch if specified
+    if branch_filter and branch_filter != "All Branches":
+        if "source_branch" in df.columns:
+            df = df[df["source_branch"] == branch_filter]
+
+    # Convert timestamp to date
+    df["date"] = pd.to_datetime(df["timestamp"], errors="coerce").dt.date
+    df = df.dropna(subset=["date", "product", "quantity"])
+
+    # Aggregate by date + product (+ branch if showing all)
+    group_cols = ["date", "product"]
+    if "source_branch" in df.columns and branch_filter == "All Branches":
+        group_cols.append("source_branch")
+
+    grouped = df.groupby(group_cols)["quantity"].sum().reset_index()
+    return grouped
+
 def prepare_bar_chart_data(df: pd.DataFrame, branch_filter: str = None, 
                            encoder_filter: str = None, product_filter: str = None,
                            date_range: tuple = None) -> pd.DataFrame:
