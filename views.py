@@ -156,6 +156,80 @@ def render_admin_view(user):
     if not df.empty:
         st.dataframe(df, use_container_width=True)
 
+        # =============================================================================
+        # 📊 DYNAMIC BAR CHART (Progressive Filtering Fix)
+        # =============================================================================
+        st.divider()
+        st.subheader("📊 Sales Breakdown by Encoder & Product")
+
+        # Start with full dataset
+        df_prog = df.copy()
+
+        col_f1, col_f2, col_f3, col_f4 = st.columns(4)
+
+        with col_f1:
+            branch_options = ["All Branches"] + list(BRANCH_SHEETS.keys())
+            bar_branch = st.selectbox("Filter by Branch", branch_options, key="bar_branch")
+
+        # 1️ Apply Branch Filter immediately
+        if bar_branch != "All Branches" and "source_branch" in df_prog.columns:
+            df_prog = df_prog[df_prog["source_branch"] == bar_branch]
+
+        with col_f2:
+            enc_col = next((c for c in ["enc_name", "encoder", "fullname", "full_name", "name"] if c in df_prog.columns), None)
+            encoders = ["All Encoders"]
+            if enc_col and not df_prog.empty:
+                enc_list = df_prog[enc_col].dropna().astype(str).str.strip().unique().tolist()
+                encoders += sorted([e for e in enc_list if e])
+            bar_encoder = st.selectbox("Filter by Encoder", encoders, key="bar_encoder")
+
+        # 2️⃣ Apply Encoder Filter immediately (now product dropdown only sees this encoder's data)
+        if bar_encoder != "All Encoders" and enc_col:
+            df_prog = df_prog[df_prog[enc_col] == bar_encoder]
+
+        with col_f3:
+            products = ["All Products"]
+            if not df_prog.empty and "product" in df_prog.columns:
+                prod_list = df_prog["product"].dropna().astype(str).str.strip().unique().tolist()
+                products += sorted([p for p in prod_list if p])
+            bar_product = st.selectbox("Filter by Product", products, key="bar_product")
+
+        with col_f4:
+            if not df_prog.empty and "timestamp" in df_prog.columns:
+                dates = pd.to_datetime(df_prog["timestamp"], errors="coerce").dropna()
+                min_d, max_d = (dates.min().date(), dates.max().date()) if not dates.empty else (None, None)
+            else:
+                min_d, max_d = None, None
+            bar_date = st.date_input("Date Range", value=(min_d, max_d) if min_d else None,
+                                    min_value=min_d, max_value=max_d, key="bar_date")
+
+        # 3️⃣ Apply Product & Date Filters for Final Chart
+        if bar_product != "All Products":
+            df_prog = df_prog[df_prog["product"] == bar_product]
+
+        if isinstance(bar_date, tuple) and len(bar_date) == 2:
+            df_prog["temp_date"] = pd.to_datetime(df_prog["timestamp"], errors="coerce").dt.date
+            df_prog = df_prog[(df_prog["temp_date"] >= bar_date[0]) & (df_prog["temp_date"] <= bar_date[1])]
+            df_prog.drop(columns=["temp_date"], inplace=True)
+
+        # ── Render Chart ──
+        if not df_prog.empty:
+            x_axis = "product" if bar_encoder != "All Encoders" and enc_col else (enc_col if enc_col else "product")
+            color_axis = "product" if bar_encoder == "All Encoders" or not enc_col else None
+
+            # Aggregate to prevent duplicate bars
+            group_cols = [x_axis] + ([color_axis] if color_axis else [])
+            chart_df = df_prog.groupby(group_cols)["quantity"].sum().reset_index().rename(columns={"quantity": "total_qty"})
+
+            title = f"Sales Breakdown - {bar_encoder}" if bar_encoder != "All Encoders" else f"Sales Breakdown - {bar_branch}"
+            
+            fig = px.bar(chart_df, x=x_axis, y="total_qty", color=color_axis, barmode="group", 
+                        title=title, height=400, labels={"total_qty": "Total Quantity", "product": "Product"})
+            fig.update_layout(hovermode="x unified", legend=dict(orientation="h", y=1.02, x=1), bargap=0.15)
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("ℹ️ No data matches the selected filters.")
+
         # ✅ TREND CHART SECTION
         st.divider()
         st.subheader("📈 Sales Trend by Product")
@@ -197,102 +271,7 @@ def render_admin_view(user):
         else:
             st.info("ℹ️ No trend data available.")
 
-    # =============================================================================
-    # 📊 DYNAMIC BAR CHART SECTION
-    # =============================================================================
-    st.divider()
-    st.subheader("📊 Sales Breakdown by Encoder & Product")
-
-    # ── Filter Controls ──
-    col_f1, col_f2, col_f3, col_f4 = st.columns(4)
-
-    with col_f1:
-        # Branch filter
-        branch_options = ["All Branches"] + list(BRANCH_SHEETS.keys())
-        bar_branch = st.selectbox("Filter by Branch", branch_options, key="bar_branch")
-
-    # 🔍 Get branch-filtered data first
-    if bar_branch == "All Branches":
-        branch_filtered_df = df
-    else:
-        branch_filtered_df = df[df.get("source_branch", pd.Series()) == bar_branch] if "source_branch" in df.columns else df
-
-    with col_f2:
-        # ✅ Dynamic Encoder filter (only from selected branch)
-        enc_col = None
-        for col in ["enc_name", "encoder", "encoder_name", "fullname", "full_name", "name"]:
-            if col in branch_filtered_df.columns:
-                enc_col = col
-                break
-        
-        encoders = ["All Encoders"]
-        if enc_col and not branch_filtered_df.empty:
-            encoder_names = branch_filtered_df[enc_col].dropna().unique().tolist()
-            encoder_names = [str(e).strip() for e in encoder_names if e and str(e).strip()]
-            encoders += sorted(encoder_names)
-        
-        bar_encoder = st.selectbox("Filter by Encoder", encoders, key="bar_encoder")
-
-    with col_f3:
-        # ✅ Dynamic Product filter (only from selected branch)
-        products = ["All Products"]
-        if not branch_filtered_df.empty and "product" in branch_filtered_df.columns:
-            product_names = branch_filtered_df["product"].dropna().unique().tolist()
-            product_names = [str(p).strip() for p in product_names if p and str(p).strip()]
-            products += sorted(product_names)
-        
-        bar_product = st.selectbox("Filter by Product", products, key="bar_product")
-
-    with col_f4:
-        # Date range filter (use branch-filtered data for min/max)
-        if not branch_filtered_df.empty and "timestamp" in branch_filtered_df.columns:
-            min_date = pd.to_datetime(branch_filtered_df["timestamp"], errors="coerce").min()
-            max_date = pd.to_datetime(branch_filtered_df["timestamp"], errors="coerce").max()
-            min_date = min_date.date() if pd.notna(min_date) else None
-            max_date = max_date.date() if pd.notna(max_date) else None
-        else:
-            min_date, max_date = None, None
-            
-        bar_date_range = st.date_input(
-            "Date Range", 
-            value=(min_date, max_date) if min_date and max_date else None,
-            min_value=min_date, 
-            max_value=max_date, 
-            key="bar_date"
-        )
-
-    # ── Prepare Data ──
-    # Handle date_input return type (tuple or single date)
-    date_filter = bar_date_range if isinstance(bar_date_range, tuple) and len(bar_date_range) == 2 else None
-    chart_df = prepare_bar_chart_data(df, branch_filter=bar_branch, encoder_filter=bar_encoder, 
-                                    product_filter=bar_product, date_range=date_filter)
-
-    # ── Render Chart ──
-    if not chart_df.empty:
-        # Determine color grouping
-        color_col = "product" if bar_product == "All Products" else None
-        x_col = "enc_name" if "enc_name" in chart_df.columns and bar_encoder == "All Encoders" else "product"
-        
-        fig = px.bar(
-            chart_df,
-            x=x_col,
-            y="total_qty",
-            color=color_col,
-            barmode="group",
-            title=f"Sales Breakdown - {bar_branch}",
-            labels={"total_qty": "Total Quantity", x_col: x_col.title(), "product": "Product", "enc_name": "Encoder"},
-            height=400
-        )
-        fig.update_layout(
-            hovermode="x unified",
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-            xaxis_title=x_col.title(),
-            yaxis_title="Total Quantity",
-            bargap=0.1
-        )
-        st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.info("ℹ️ No data matches the selected filters.")
+    
 
     st.divider()
     col1, col2 = st.columns(2)
@@ -319,12 +298,71 @@ def render_moderator_view(user):
     st.caption("Complete transaction history")
 
     df = get_sheet_data(user["branch"])
-    df = normalize_df_columns(df)
+    df = normalize_df_columns(df)  # ✅ Normalize columns
     df_display = df.drop(columns=["username"], errors="ignore")
-
 
     if not df.empty:
         st.dataframe(df_display, use_container_width=True)
+        # =============================================================================
+        # 📊 MODERATOR: DYNAMIC SALES BREAKDOWN (Branch-Locked)
+        # =============================================================================
+        st.divider()
+        st.subheader(f"📊 {user['branch']} Sales Breakdown")
+
+        # df is already locked to user["branch"]
+        df_prog = df.copy()
+        col_f1, col_f2, col_f3 = st.columns(3)
+
+        with col_f1:
+            enc_col = next((c for c in ["enc_name", "encoder", "fullname", "full_name", "name"] if c in df_prog.columns), None)
+            encoders = ["All Encoders"]
+            if enc_col and not df_prog.empty:
+                enc_list = df_prog[enc_col].dropna().astype(str).str.strip().unique().tolist()
+                encoders += sorted([e for e in enc_list if e])
+            bar_encoder = st.selectbox("Filter by Encoder", encoders, key=f"mod_bar_enc_{user['branch']}")
+
+        # Apply encoder filter before populating products
+        if bar_encoder != "All Encoders" and enc_col:
+            df_prog = df_prog[df_prog[enc_col] == bar_encoder]
+
+        with col_f2:
+            products = ["All Products"]
+            if not df_prog.empty and "product" in df_prog.columns:
+                prod_list = df_prog["product"].dropna().astype(str).str.strip().unique().tolist()
+                products += sorted([p for p in prod_list if p])
+            bar_product = st.selectbox("Filter by Product", products, key=f"mod_bar_prod_{user['branch']}")
+
+        with col_f3:
+            if not df_prog.empty and "timestamp" in df_prog.columns:
+                dates = pd.to_datetime(df_prog["timestamp"], errors="coerce").dropna()
+                min_d, max_d = (dates.min().date(), dates.max().date()) if not dates.empty else (None, None)
+            else:
+                min_d, max_d = None, None
+            bar_date = st.date_input("Date Range", value=(min_d, max_d) if min_d else None,
+                                    min_value=min_d, max_value=max_d, key=f"mod_bar_date_{user['branch']}")
+
+        # Apply product & date filters
+        if bar_product != "All Products":
+            df_prog = df_prog[df_prog["product"] == bar_product]
+        if isinstance(bar_date, tuple) and len(bar_date) == 2:
+            df_prog["temp_date"] = pd.to_datetime(df_prog["timestamp"], errors="coerce").dt.date
+            df_prog = df_prog[(df_prog["temp_date"] >= bar_date[0]) & (df_prog["temp_date"] <= bar_date[1])]
+            df_prog.drop(columns=["temp_date"], inplace=True)
+
+        # Render
+        if not df_prog.empty:
+            x_axis = "product" if bar_encoder != "All Encoders" and enc_col else (enc_col if enc_col else "product")
+            color_axis = "product" if bar_encoder == "All Encoders" or not enc_col else None
+            group_cols = [x_axis] + ([color_axis] if color_axis else [])
+            chart_df = df_prog.groupby(group_cols)["quantity"].sum().reset_index().rename(columns={"quantity": "total_qty"})
+            
+            title = f"Sales Breakdown - {bar_encoder}" if bar_encoder != "All Encoders" else f"Sales Breakdown - {user['branch']}"
+            fig = px.bar(chart_df, x=x_axis, y="total_qty", color=color_axis, barmode="group", 
+                        title=title, height=400, labels={"total_qty": "Total Quantity"})
+            fig.update_layout(hovermode="x unified", legend=dict(orientation="h", y=1.02, x=1))
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("ℹ️ No data matches the selected filters.")
 
         # ✅ TREND CHART SECTION
         st.divider()
@@ -367,57 +405,6 @@ def render_moderator_view(user):
     else:
         st.info("ℹ️ No records yet.")
 
-    # In render_moderator_view(), after the line chart:
-    st.divider()
-    st.subheader(f"📊 {user['branch']} Sales Breakdown")
-
-    col_f1, col_f2, col_f3 = st.columns(3)
-
-    with col_f1:
-        enc_col = None
-        for col in ["enc_name", "encoder", "encoder_name", "fullname", "full_name", "name"]:
-            if col in df.columns:
-                enc_col = col
-                break
-        
-        # # DEBUG: Check what columns exist
-        # st.write("📋 Available columns:", df.columns.tolist())
-        # if "enc_name" in df.columns:
-        #     st.write(f"✅ enc_name found! Unique values: {df['enc_name'].dropna().unique().tolist()}")
-        # else:
-        #     st.warning("❌ 'enc_name' column not found!")
-        # Build encoder list
-        encoders = ["All Encoders"]
-        if enc_col and not df.empty:
-            encoder_names = df[enc_col].dropna().unique().tolist()
-            encoder_names = [e for e in encoder_names if e and str(e).strip()]  # Remove empty/None
-            encoders += sorted(encoder_names)
-        
-        bar_encoder = st.selectbox("Filter by Encoder", encoders, key="bar_encoder")
-
-    with col_f2:
-        products = ["All Products"] + sorted(df["product"].dropna().unique().tolist()) if not df.empty else ["All Products"]
-        bar_product = st.selectbox("Filter by Product", products, key=f"mod_bar_prod_{user['branch']}")
-
-    with col_f3:
-        min_date = pd.to_datetime(df["timestamp"]).min().date() if not df.empty and "timestamp" in df.columns else None
-        max_date = pd.to_datetime(df["timestamp"]).max().date() if not df.empty and "timestamp" in df.columns else None
-        bar_date_range = st.date_input("Date Range", value=(min_date, max_date) if min_date and max_date else None,
-                                    min_value=min_date, max_value=max_date, key=f"mod_bar_date_{user['branch']}")
-
-    date_filter = bar_date_range if isinstance(bar_date_range, tuple) and len(bar_date_range) == 2 else None
-    chart_df = prepare_bar_chart_data(df, branch_filter=user["branch"], encoder_filter=bar_encoder, 
-                                    product_filter=bar_product, date_range=date_filter)
-
-    if not chart_df.empty:
-        x_col = "enc_name" if bar_encoder == "All Encoders" and "enc_name" in chart_df.columns else "product"
-        fig = px.bar(chart_df, x=x_col, y="total_qty", color="product" if bar_product == "All Products" else None,
-                    barmode="group", title=f"{user['branch']} - Sales Breakdown", height=400)
-        fig.update_layout(hovermode="x unified", legend=dict(orientation="h", y=1.02, x=1))
-        st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.info("ℹ️ No data matches the selected filters.")
-        
     st.divider()
     col1, col2 = st.columns(2)
 
@@ -426,7 +413,7 @@ def render_moderator_view(user):
     with col2:
         if "timestamp" in df.columns and not df["timestamp"].isna().all():
             latest = pd.to_datetime(df["timestamp"]).max()
-            st.metric("Latest Submission", latest.strftime("%m/%d %I:%M %p"))
+            st.metric("Latest Submission", latest.strftime("%m/%d %H:%M"))
         else:
             st.metric("Latest Submission", "N/A")
 
