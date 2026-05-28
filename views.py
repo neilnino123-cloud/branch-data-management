@@ -114,83 +114,83 @@ def render_admin_view(user):
         else:
             st.info("ℹ️ No trend data available.")
 
-            # =============================================================================
-        # 📊 DYNAMIC BAR CHART SECTION
-        # =============================================================================
-        st.divider()
-        st.subheader("📊 Sales Breakdown by Encoder & Product")
-        
-        # ── Filter Controls ──
-        col_f1, col_f2, col_f3, col_f4 = st.columns(4)
-        
-        with col_f1:
-            # Branch filter (reuse existing logic)
-            branch_options = ["All Branches"] + list(BRANCH_SHEETS.keys())
-            bar_branch = st.selectbox("Filter by Branch", branch_options, key="bar_branch")
-        
-        with col_f2:
-            # Encoder filter (dynamic from data)
-            encoders = ["All Encoders"]
-            if not df.empty and "enc_name" in df.columns:
-                encoders += sorted(df["enc_name"].dropna().unique().tolist())
-            bar_encoder = st.selectbox("Filter by Encoder", encoders, key="bar_encoder")
-        
-        with col_f3:
-            # Product filter
-            products = ["All Products"] + sorted(df["product"].dropna().unique().tolist()) if not df.empty else ["All Products"]
-            bar_product = st.selectbox("Filter by Product", products, key="bar_product")
-        
-        with col_f4:
-            # Date range filter
-            min_date = pd.to_datetime(df["timestamp"]).min().date() if not df.empty and "timestamp" in df.columns else None
-            max_date = pd.to_datetime(df["timestamp"]).max().date() if not df.empty and "timestamp" in df.columns else None
-            bar_date_range = st.date_input("Date Range", value=(min_date, max_date) if min_date and max_date else None, 
-                                           min_value=min_date, max_value=max_date, key="bar_date")
-        
-        # ── Prepare Data ──
-        # Handle date_input return type (tuple or single date)
-        date_filter = bar_date_range if isinstance(bar_date_range, tuple) and len(bar_date_range) == 2 else None
-        chart_df = prepare_bar_chart_data(df, branch_filter=bar_branch, encoder_filter=bar_encoder, 
-                                          product_filter=bar_product, date_range=date_filter)
-        
-        # ── Render Chart ──
-        if not chart_df.empty:
-            # Determine color grouping
-            color_col = "product" if bar_product == "All Products" else None
-            x_col = "enc_name" if "enc_name" in chart_df.columns and bar_encoder == "All Encoders" else "product"
-            
-            fig = px.bar(
-                chart_df,
-                x=x_col,
-                y="total_qty",
-                color=color_col,
-                barmode="group",
-                title=f"Sales Breakdown - {bar_branch}",
-                labels={"total_qty": "Total Quantity", x_col: x_col.title(), "product": "Product", "enc_name": "Encoder"},
-                height=400
-            )
-            fig.update_layout(
-                hovermode="x unified",
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-                xaxis_title=x_col.title(),
-                yaxis_title="Total Quantity",
-                bargap=0.1
-            )
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("ℹ️ No data matches the selected filters.")
-
-        st.divider()
-        col1, col2 = st.columns(2)
+    # =============================================================================
+    # 📊 DYNAMIC BAR CHART SECTION
+    # =============================================================================
+    st.divider()
+    st.subheader("📊 Sales Breakdown by Encoder & Product")
     
-        with col1:
-            st.metric("Total Submissions", len(df))
-        with col2:
-            if "timestamp" in df.columns and not df["timestamp"].isna().all():
-                latest = pd.to_datetime(df["timestamp"]).max()
-                st.metric("Latest Submission", latest.strftime("%m/%d %I:%M %p"))
-            else:
-                st.metric("Latest Submission", "N/A")
+    # ── Filter Controls ──
+    col_f1, col_f2, col_f3, col_f4 = st.columns(4)
+    
+    with col_f1:
+        # Branch filter (reuse existing logic)
+        branch_options = ["All Branches"] + list(BRANCH_SHEETS.keys())
+        bar_branch = st.selectbox("Filter by Branch", branch_options, key="bar_branch")
+    
+    with col_f2:
+        # Encoder filter (dynamic from data)
+        encoders = ["All Encoders"]
+        if not df.empty and "enc_name" in df.columns:
+            encoders += sorted(df["enc_name"].dropna().unique().tolist())
+        bar_encoder = st.selectbox("Filter by Encoder", encoders, key="bar_encoder")
+    
+    with col_f3:
+        # Product filter
+        products = ["All Products"] + sorted(df["product"].dropna().unique().tolist()) if not df.empty else ["All Products"]
+        bar_product = st.selectbox("Filter by Product", products, key="bar_product")
+    
+    with col_f4:
+        # Date range filter
+        min_date = pd.to_datetime(df["timestamp"]).min().date() if not df.empty and "timestamp" in df.columns else None
+        max_date = pd.to_datetime(df["timestamp"]).max().date() if not df.empty and "timestamp" in df.columns else None
+        bar_date_range = st.date_input("Date Range", value=(min_date, max_date) if min_date and max_date else None, 
+                                       min_value=min_date, max_value=max_date, key="bar_date")
+    
+    # ── Prepare Data ──
+    # Handle date_input return type (tuple or single date)
+    date_filter = bar_date_range if isinstance(bar_date_range, tuple) and len(bar_date_range) == 2 else None
+    chart_df = prepare_bar_chart_data(df, branch_filter=bar_branch, encoder_filter=bar_encoder, 
+                                      product_filter=bar_product, date_range=date_filter)
+    
+    # ── Render Chart ──
+    if not chart_df.empty:
+        # Determine color grouping
+        color_col = "product" if bar_product == "All Products" else None
+        x_col = "enc_name" if "enc_name" in chart_df.columns and bar_encoder == "All Encoders" else "product"
+        
+        fig = px.bar(
+            chart_df,
+            x=x_col,
+            y="total_qty",
+            color=color_col,
+            barmode="group",
+            title=f"Sales Breakdown - {bar_branch}",
+            labels={"total_qty": "Total Quantity", x_col: x_col.title(), "product": "Product", "enc_name": "Encoder"},
+            height=400
+        )
+        fig.update_layout(
+            hovermode="x unified",
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            xaxis_title=x_col.title(),
+            yaxis_title="Total Quantity",
+            bargap=0.1
+        )
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("ℹ️ No data matches the selected filters.")
+
+    st.divider()
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.metric("Total Submissions", len(df))
+    with col2:
+        if "timestamp" in df.columns and not df["timestamp"].isna().all():
+            latest = pd.to_datetime(df["timestamp"]).max()
+            st.metric("Latest Submission", latest.strftime("%m/%d %I:%M %p"))
+        else:
+            st.metric("Latest Submission", "N/A")
 
 
 def render_moderator_view(user):
