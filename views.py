@@ -161,7 +161,7 @@ def render_admin_view(user):
         # 📊 DYNAMIC BAR CHART (Progressive Filtering Fix)
         # =============================================================================
         st.divider()
-        st.subheader("📊 Sales Breakdown by Encoder & Product")
+        st.subheader("📊 Smahc Pull out Breakdown by Encoder & Product")
 
         # Start with full dataset
         df_prog = df.copy()
@@ -233,7 +233,7 @@ def render_admin_view(user):
 
         # ✅ TREND CHART SECTION
         st.divider()
-        st.subheader("📈 Sales Trend by Product")
+        st.subheader("📈 Smahc Pull out Trend by Product")
 
         all_products = ["All Products"] + \
             sorted(df["product"].dropna().unique().tolist())
@@ -308,7 +308,7 @@ def render_moderator_view(user):
         # 📊 MODERATOR: DYNAMIC SALES BREAKDOWN (Branch-Locked)
         # =============================================================================
         st.divider()
-        st.subheader(f"📊 {user['branch']} Sales Breakdown")
+        st.subheader(f"📊 {user['branch']} Smahc Pull out Breakdown")
 
         # df is already locked to user["branch"]
         df_prog = df.copy()
@@ -367,7 +367,7 @@ def render_moderator_view(user):
 
         # ✅ TREND CHART SECTION
         st.divider()
-        st.subheader(f"📈 {user['branch']} Sales Trend by Product")
+        st.subheader(f"📈 {user['branch']} Smahc Pull out Trend by Product")
 
         all_products = ["All Products"] + \
             sorted(df["product"].dropna().unique().tolist())
