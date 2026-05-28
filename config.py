@@ -63,7 +63,7 @@ PRODUCT_LIST = {
 # Encoder Lists (per branch)
 LEYTE_ENCODERS = {
         "ley_fats": {"BEN DADULA",
-                  "GEE RIÑOS",
+                  "GEE FERNAND RIÑOS",
                   "GLAIZA MAE BANTANOS",
                   "GREGORIO CABELTE JR.",
                   "JAIME PACAYDE",
