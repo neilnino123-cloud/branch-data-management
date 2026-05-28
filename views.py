@@ -5,7 +5,7 @@ from database import append_to_sheet, get_sheet_data, get_all_sheets_data, norma
 from config import BRANCH_SHEETS, LEYTE_CUSTOMERS, SAMAR_CUSTOMERS, CALBAYOG_CUSTOMERS, SOLEY_CUSTOMERS, PRODUCT_LIST, LEYTE_ENCODERS, SAMAR_ENCODERS, CALBAYOG_ENCODERS, SOLEY_ENCODERS, USERS
 import plotly.express as px
 from zoneinfo import ZoneInfo
-from utils.charts import prepare_bar_chart_data
+
 
 # Define Philippine Time
 PHT = ZoneInfo("Asia/Manila")
