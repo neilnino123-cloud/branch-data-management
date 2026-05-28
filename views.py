@@ -122,7 +122,7 @@ def render_admin_view(user):
     with col2:
         if "timestamp" in df.columns and not df["timestamp"].isna().all():
             latest = pd.to_datetime(df["timestamp"]).max()
-            st.metric("Latest Submission", latest.strftime("%m/%d %H:%M"))
+            st.metric("Latest Submission", latest.strftime("%m/%d %I:%M %p"))
         else:
             st.metric("Latest Submission", "N/A")
 
@@ -196,7 +196,7 @@ def render_moderator_view(user):
     with col2:
         if "timestamp" in df.columns and not df["timestamp"].isna().all():
             latest = pd.to_datetime(df["timestamp"]).max()
-            st.metric("Latest Submission", latest.strftime("%m/%d %H:%M"))
+            st.metric("Latest Submission", latest.strftime("%m/%d %I:%M %p"))
         else:
             st.metric("Latest Submission", "N/A")
 
@@ -329,7 +329,7 @@ def render_encoder_view(user):
                     st.error(f"❌ {err}")
             else:
                 data = {
-                    "timestamp": datetime.now(PHT).strftime("%Y-%m-%d %H:%M:%S"),
+                    "timestamp": datetime.now(PHT).strftime("%Y-%m-%d %I:%M:%S %p"),
                     "username": user["username"],
                     "role_team": f"Encoder - {user.get('team', 'General')}",
                     "enc_name": st.session_state.enc_name.strip().upper(),
@@ -370,7 +370,7 @@ def render_encoder_view(user):
     with col2:
         if "timestamp" in df.columns and not df["timestamp"].isna().all():
             latest = pd.to_datetime(df["timestamp"]).max()
-            st.metric("Latest Submission", latest.strftime("%m/%d %H:%M"))
+            st.metric("Latest Submission", latest.strftime("%m/%d %I:%M %p"))
         else:
             st.metric("Latest Submission", "N/A")
 
