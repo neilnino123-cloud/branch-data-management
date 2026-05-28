@@ -275,7 +275,6 @@ def render_admin_view(user):
         else:
             st.metric("Latest Submission", "N/A")
 
-
 def render_moderator_view(user):
     with st.container(horizontal=True, horizontal_alignment="distribute"):
         st.header(f"👨‍💼 Moderator Dashboard: {user['branch']}")
