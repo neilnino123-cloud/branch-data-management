@@ -265,37 +265,37 @@ def render_moderator_view(user):
         st.info("ℹ️ No records yet.")
 
     # In render_moderator_view(), after the line chart:
-    st.divider()
-    st.subheader(f"📊 {user['branch']} Sales Breakdown")
+st.divider()
+st.subheader(f"📊 {user['branch']} Sales Breakdown")
 
-    col_f1, col_f2, col_f3 = st.columns(3)
+col_f1, col_f2, col_f3 = st.columns(3)
 
-    with col_f1:
-        encoders = ["All Encoders"] + sorted(df["enc_name"].dropna().unique().tolist()) if not df.empty and "enc_name" in df.columns else ["All Encoders"]
-        bar_encoder = st.selectbox("Filter by Encoder", encoders, key=f"mod_bar_enc_{user['branch']}")
+with col_f1:
+    encoders = ["All Encoders"] + sorted(df["enc_name"].dropna().unique().tolist()) if not df.empty and "enc_name" in df.columns else ["All Encoders"]
+    bar_encoder = st.selectbox("Filter by Encoder", encoders, key=f"mod_bar_enc_{user['branch']}")
 
-    with col_f2:
-        products = ["All Products"] + sorted(df["product"].dropna().unique().tolist()) if not df.empty else ["All Products"]
-        bar_product = st.selectbox("Filter by Product", products, key=f"mod_bar_prod_{user['branch']}")
+with col_f2:
+    products = ["All Products"] + sorted(df["product"].dropna().unique().tolist()) if not df.empty else ["All Products"]
+    bar_product = st.selectbox("Filter by Product", products, key=f"mod_bar_prod_{user['branch']}")
 
-    with col_f3:
-        min_date = pd.to_datetime(df["timestamp"]).min().date() if not df.empty and "timestamp" in df.columns else None
-        max_date = pd.to_datetime(df["timestamp"]).max().date() if not df.empty and "timestamp" in df.columns else None
-        bar_date_range = st.date_input("Date Range", value=(min_date, max_date) if min_date and max_date else None,
-                                    min_value=min_date, max_value=max_date, key=f"mod_bar_date_{user['branch']}")
+with col_f3:
+    min_date = pd.to_datetime(df["timestamp"]).min().date() if not df.empty and "timestamp" in df.columns else None
+    max_date = pd.to_datetime(df["timestamp"]).max().date() if not df.empty and "timestamp" in df.columns else None
+    bar_date_range = st.date_input("Date Range", value=(min_date, max_date) if min_date and max_date else None,
+                                   min_value=min_date, max_value=max_date, key=f"mod_bar_date_{user['branch']}")
 
-    date_filter = bar_date_range if isinstance(bar_date_range, tuple) and len(bar_date_range) == 2 else None
-    chart_df = prepare_bar_chart_data(df, branch_filter=user["branch"], encoder_filter=bar_encoder, 
-                                    product_filter=bar_product, date_range=date_filter)
+date_filter = bar_date_range if isinstance(bar_date_range, tuple) and len(bar_date_range) == 2 else None
+chart_df = prepare_bar_chart_data(df, branch_filter=user["branch"], encoder_filter=bar_encoder, 
+                                  product_filter=bar_product, date_range=date_filter)
 
-    if not chart_df.empty:
-        x_col = "enc_name" if bar_encoder == "All Encoders" and "enc_name" in chart_df.columns else "product"
-        fig = px.bar(chart_df, x=x_col, y="total_qty", color="product" if bar_product == "All Products" else None,
-                    barmode="group", title=f"{user['branch']} - Sales Breakdown", height=400)
-        fig.update_layout(hovermode="x unified", legend=dict(orientation="h", y=1.02, x=1))
-        st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.info("ℹ️ No data matches the selected filters.")
+if not chart_df.empty:
+    x_col = "enc_name" if bar_encoder == "All Encoders" and "enc_name" in chart_df.columns else "product"
+    fig = px.bar(chart_df, x=x_col, y="total_qty", color="product" if bar_product == "All Products" else None,
+                 barmode="group", title=f"{user['branch']} - Sales Breakdown", height=400)
+    fig.update_layout(hovermode="x unified", legend=dict(orientation="h", y=1.02, x=1))
+    st.plotly_chart(fig, use_container_width=True)
+else:
+    st.info("ℹ️ No data matches the selected filters.")
         
     st.divider()
     col1, col2 = st.columns(2)
@@ -483,37 +483,6 @@ def render_encoder_view(user):
         else:
             st.metric("Latest Submission", "N/A")
 
-
-def prepare_trend_data(df: pd.DataFrame, branch_filter: str = None) -> pd.DataFrame:
-    """Prepares dataframe for trend line chart with normalized columns."""
-    if df.empty:
-        return pd.DataFrame()
-
-    # ✅ Ensure lowercase columns
-    df = df.copy()
-    df.columns = df.columns.str.lower().str.strip().str.replace(" ", "_")
-
-    # Verify required columns
-    required = ["timestamp", "product", "quantity"]
-    if not all(col in df.columns for col in required):
-        return pd.DataFrame()
-
-    # Filter by branch if specified
-    if branch_filter and branch_filter != "All Branches":
-        if "source_branch" in df.columns:
-            df = df[df["source_branch"] == branch_filter]
-
-    # Convert timestamp to date
-    df["date"] = pd.to_datetime(df["timestamp"], errors="coerce").dt.date
-    df = df.dropna(subset=["date", "product", "quantity"])
-
-    # Aggregate by date + product (+ branch if showing all)
-    group_cols = ["date", "product"]
-    if "source_branch" in df.columns and branch_filter == "All Branches":
-        group_cols.append("source_branch")
-
-    grouped = df.groupby(group_cols)["quantity"].sum().reset_index()
-    return grouped
 
 def prepare_bar_chart_data(df: pd.DataFrame, branch_filter: str = None, 
                            encoder_filter: str = None, product_filter: str = None,
