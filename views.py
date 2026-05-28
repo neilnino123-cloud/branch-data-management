@@ -122,52 +122,49 @@ def render_admin_view(user):
     # ✅ Normalize columns for consistency
     df = normalize_df_columns(df)
 
-    # if not df.empty:
-    #     st.dataframe(df, use_container_width=True)
+    if not df.empty:
+        st.dataframe(df, use_container_width=True)
 
-    #     # ✅ TREND CHART SECTION
-    #     st.divider()
-    #     st.subheader("📈 Sales Trend by Product")
+        # ✅ TREND CHART SECTION
+        st.divider()
+        st.subheader("📈 Sales Trend by Product")
 
-    #     all_products = ["All Products"] + \
-    #         sorted(df["product"].dropna().unique().tolist())
-    #     selected_chart_product = st.selectbox(
-    #         "Filter by Product (Optional)", all_products, key="admin_chart_product")
+        all_products = ["All Products"] + \
+            sorted(df["product"].dropna().unique().tolist())
+        selected_chart_product = st.selectbox(
+            "Filter by Product (Optional)", all_products, key="admin_chart_product")
 
-    #     chart_df = prepare_trend_data(df, branch_filter=selected_branch)
+        chart_df = prepare_trend_data(df, branch_filter=selected_branch)
 
-    #     if not chart_df.empty:
-    #         if selected_chart_product != "All Products":
-    #             chart_df = chart_df[chart_df["product"]
-    #                                 == selected_chart_product]
+        if not chart_df.empty:
+            if selected_chart_product != "All Products":
+                chart_df = chart_df[chart_df["product"]
+                                    == selected_chart_product]
 
-    #         if not chart_df.empty:
-    #             fig = px.line(
-    #                 chart_df,
-    #                 x="date",
-    #                 y="quantity",
-    #                 color="product" if selected_chart_product == "All Products" else None,
-    #                 markers=True,
-    #                 title=f"Sales Trend - {selected_branch}" if selected_branch != "All Branches" else "Sales Trend - All Branches",
-    #                 labels={"quantity": "Total Quantity", "date": "Date",
-    #                         "product": "Product", "branch": "Branch"},
-    #                 height=400
-    #             )
-    #             fig.update_layout(
-    #                 hovermode="x unified",
-    #                 legend=dict(orientation="h", yanchor="bottom",
-    #                             y=1.02, xanchor="right", x=1),
-    #                 xaxis_title="Date",
-    #                 yaxis_title="Total Quantity"
-    #             )
-    #             st.plotly_chart(fig, use_container_width=True)
-    #         else:
-    #             st.info("ℹ️ No data for selected product filter.")
-    #     else:
-    #         st.info("ℹ️ No trend data available.")
-    # else:
-    #     st.info("ℹ️ No records yet.")
-     
+            if not chart_df.empty:
+                fig = px.line(
+                    chart_df,
+                    x="date",
+                    y="quantity",
+                    color="product" if selected_chart_product == "All Products" else None,
+                    markers=True,
+                    title=f"Sales Trend - {selected_branch}" if selected_branch != "All Branches" else "Sales Trend - All Branches",
+                    labels={"quantity": "Total Quantity", "date": "Date",
+                            "product": "Product", "branch": "Branch"},
+                    height=400
+                )
+                fig.update_layout(
+                    hovermode="x unified",
+                    legend=dict(orientation="h", yanchor="bottom",
+                                y=1.02, xanchor="right", x=1),
+                    xaxis_title="Date",
+                    yaxis_title="Total Quantity"
+                )
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("ℹ️ No data for selected product filter.")
+        else:
+            st.info("ℹ️ No trend data available.")
 
     # =============================================================================
     # 📊 DYNAMIC BAR CHART SECTION
@@ -179,45 +176,59 @@ def render_admin_view(user):
     col_f1, col_f2, col_f3, col_f4 = st.columns(4)
 
     with col_f1:
-        # Branch filter (reuse existing logic)
+        # Branch filter
         branch_options = ["All Branches"] + list(BRANCH_SHEETS.keys())
         bar_branch = st.selectbox("Filter by Branch", branch_options, key="bar_branch")
 
-    with col_f2:
-        # # DEBUG: Check what columns exist
-        # st.write("📋 Available columns:", df.columns.tolist())
-        # if "enc_name" in df.columns:
-        #     st.write(f"✅ enc_name found! Unique values: {df['enc_name'].dropna().unique().tolist()}")
-        # else:
-        #     st.warning("❌ 'enc_name' column not found!")
+    # 🔍 Get branch-filtered data first
+    if bar_branch == "All Branches":
+        branch_filtered_df = df
+    else:
+        branch_filtered_df = df[df.get("source_branch", pd.Series()) == bar_branch] if "source_branch" in df.columns else df
 
-        # 🔍 Find encoder column (handle different naming conventions)
+    with col_f2:
+        # ✅ Dynamic Encoder filter (only from selected branch)
         enc_col = None
         for col in ["enc_name", "encoder", "encoder_name", "fullname", "full_name", "name"]:
-            if col in df.columns:
+            if col in branch_filtered_df.columns:
                 enc_col = col
                 break
         
-        # Build encoder list
         encoders = ["All Encoders"]
-        if enc_col and not df.empty:
-            encoder_names = df[enc_col].dropna().unique().tolist()
-            encoder_names = [e for e in encoder_names if e and str(e).strip()]  # Remove empty/None
+        if enc_col and not branch_filtered_df.empty:
+            encoder_names = branch_filtered_df[enc_col].dropna().unique().tolist()
+            encoder_names = [str(e).strip() for e in encoder_names if e and str(e).strip()]
             encoders += sorted(encoder_names)
         
         bar_encoder = st.selectbox("Filter by Encoder", encoders, key="bar_encoder")
-    
+
     with col_f3:
-        # Product filter
-        products = ["All Products"] + sorted(df["product"].dropna().unique().tolist()) if not df.empty else ["All Products"]
+        # ✅ Dynamic Product filter (only from selected branch)
+        products = ["All Products"]
+        if not branch_filtered_df.empty and "product" in branch_filtered_df.columns:
+            product_names = branch_filtered_df["product"].dropna().unique().tolist()
+            product_names = [str(p).strip() for p in product_names if p and str(p).strip()]
+            products += sorted(product_names)
+        
         bar_product = st.selectbox("Filter by Product", products, key="bar_product")
 
     with col_f4:
-        # Date range filter
-        min_date = pd.to_datetime(df["timestamp"]).min().date() if not df.empty and "timestamp" in df.columns else None
-        max_date = pd.to_datetime(df["timestamp"]).max().date() if not df.empty and "timestamp" in df.columns else None
-        bar_date_range = st.date_input("Date Range", value=(min_date, max_date) if min_date and max_date else None, 
-                                    min_value=min_date, max_value=max_date, key="bar_date")
+        # Date range filter (use branch-filtered data for min/max)
+        if not branch_filtered_df.empty and "timestamp" in branch_filtered_df.columns:
+            min_date = pd.to_datetime(branch_filtered_df["timestamp"], errors="coerce").min()
+            max_date = pd.to_datetime(branch_filtered_df["timestamp"], errors="coerce").max()
+            min_date = min_date.date() if pd.notna(min_date) else None
+            max_date = max_date.date() if pd.notna(max_date) else None
+        else:
+            min_date, max_date = None, None
+            
+        bar_date_range = st.date_input(
+            "Date Range", 
+            value=(min_date, max_date) if min_date and max_date else None,
+            min_value=min_date, 
+            max_value=max_date, 
+            key="bar_date"
+        )
 
     # ── Prepare Data ──
     # Handle date_input return type (tuple or single date)
@@ -251,7 +262,6 @@ def render_admin_view(user):
         st.plotly_chart(fig, use_container_width=True)
     else:
         st.info("ℹ️ No data matches the selected filters.")
-        
 
     st.divider()
     col1, col2 = st.columns(2)
