@@ -105,7 +105,7 @@ CALBAYOG_ENCODERS = {
 SOLEY_ENCODERS = {
         "sol_fats" : {"ALJHON INDIENTE",
                     "FELIX FRANCA",
-                    "J CARL VERTUDAZO",
+                    "JAY KARL VERTUDAZO",
                     "JERWIN BATHAN",
                     "JONNEL PENE",
                     "JOVEN DEL ROSARIO",
