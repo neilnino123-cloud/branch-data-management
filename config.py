@@ -68,6 +68,7 @@ LEYTE_ENCODERS = {
                   "GREGORIO CABELTE JR.",
                   "JAIME PACAYDE",
                   "JAYVEE BAGUNAS",
+                  "JEFFREY YBAÑEZ",
                   "LEIGHMARK DAGOHOY",
                   "MELCHOR PALAJOREN",
                   "MARK WELL REI LAKE"},
