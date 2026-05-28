@@ -271,7 +271,7 @@ def render_moderator_view(user):
     col_f1, col_f2, col_f3 = st.columns(3)
 
     with col_f1:
-        encoders = ["All Encoders"] + sorted(df["name"].dropna().unique().tolist()) if not df.empty and "enc_name" in df.columns else ["All Encoders"]
+        encoders = ["All Encoders"] + sorted(df["enc_name"].dropna().unique().tolist()) if not df.empty and "enc_name" in df.columns else ["All Encoders"]
         bar_encoder = st.selectbox("Filter by Encoder", encoders, key=f"mod_bar_enc_{user['branch']}")
 
     with col_f2:
