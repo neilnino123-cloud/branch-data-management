@@ -69,7 +69,8 @@ LEYTE_ENCODERS = {
                   "JAIME PACAYDE",
                   "JAYVEE BAGUNAS",
                   "LEIGHMARK DAGOHOY",
-                  "MELCHOR PALAJOREN"},
+                  "MELCHOR PALAJOREN",
+                  "MARK WELL REI LAKE"},
         "ley_dcat" : {"LORRAINE ANGELA CABILIC"},
         "ley_gfs": {"LEONIL LIBY APOR"}
                   }
