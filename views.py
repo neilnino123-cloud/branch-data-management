@@ -286,7 +286,7 @@ def render_moderator_view(user):
         st.plotly_chart(fig, use_container_width=True)
     else:
         st.info("ℹ️ No data matches the selected filters.")
-
+        
     st.divider()
     col1, col2 = st.columns(2)
 
