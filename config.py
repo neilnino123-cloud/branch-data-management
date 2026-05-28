@@ -38,8 +38,8 @@ GOOGLE_SHEET_ID = st.secrets["general"]["GOOGLE_SHEET_ID"]
 
 # Product Database
 PRODUCT_LIST = {
-    "AMOXIL V": {"SACHET", "BOX"},
-    "ELEC V": {"SACHET", "BOX"},
+    "AMOXIL-V": {"SACHET", "BOX"},
+    "ELEC-V": {"SACHET", "BOX"},
     "NOROVIT": {"10ML", "50ML", "100ML"},
     "PPG": {"SACHET", "BOX"},
     "FEATHERSHINE": {"SACHET", "BOX"},
@@ -48,6 +48,7 @@ PRODUCT_LIST = {
     "-- OTHERS --": {},
     "DOXA-V": {"SACHET", "BOX", "KL", "PAD"},
     "PARA-V": {"SACHET", "BOX", "KL", "PAD"},
+    "MULTI-V": {"SACHET", "BOX", "KL", "PAD"},
     "TRIMAX": {"SACHET", "BOX"},
     "MULTIMAX": {"SACHET", "BOX"},
     "ELECTROMAX": {"SACHET", "BOX"},
@@ -56,6 +57,7 @@ PRODUCT_LIST = {
     "DOX-C-TRIN GOLD": {"SACHET", "BOX"},
     "IRON-VET": {"BOTTLE", "BOX"},
     "BULATIGOK SD": {"SACHET", "BOX"},
+    "BULATIGOK 20%": {"SACHET", "BOX"},
     "TRIFAST": {"SACHET", "BOX"},
     "ALAMYCIN LA": {"BOTTLE", "BOX"}
 }
