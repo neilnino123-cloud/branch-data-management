@@ -22,8 +22,8 @@ def main():
 
     # Sidebar with logout
     with st.sidebar:
-        if os.path.exists("./logo3.png"):
-            st.logo("./logo3.png", size="large")
+        if os.path.exists("./logo4.png"):
+            st.logo("./logo4.png", size="large")
 
         st.success(f"Logged in as - {user['role'].capitalize()}")
 
