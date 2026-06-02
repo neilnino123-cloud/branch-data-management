@@ -1,7 +1,7 @@
 import streamlit as st
 import os
 from auth import get_current_user, logout
-from views import render_login_form, render_admin_view, render_moderator_view, render_encoder_view
+from views import render_login_form, render_admin_view, render_moderator_view, render_encoder_view, render_market_survey_view
 
 # ✅ Cross-platform logo handling
 LOGO_PATH = "logo4.png" if os.path.exists("logo3.png") else None
@@ -38,6 +38,8 @@ def main():
         render_moderator_view(user)
     elif user["role"] == "encoder":
         render_encoder_view(user)
+    elif user["role"] == "dsp":
+        render_market_survey_view(user)
     else:
         st.error("❌ Unauthorized role. Please contact administrator.")
 
