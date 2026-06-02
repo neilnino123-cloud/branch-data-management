@@ -651,27 +651,27 @@ def render_market_survey_view(user):
         with col_add:
             if st.button("➕ Add Sub-Dealer", key="ms_add_dealer_btn"):
                 if new_dealer.strip():
-                    st.session_state.ms_sub_dealers.append(new_dealer.strip().upper())
+                    st.session_state.ms_direct_dealers.append(new_dealer.strip().upper())
                     st.rerun()
                 else:
                     st.warning("Please enter a store name")
         
         with col_clear:
             if st.button("🗑️ Clear All", key="ms_clear_dealers_btn"):
-                st.session_state.ms_sub_dealers = []
+                st.session_state.ms_direct_dealers = []
                 st.rerun()
         
         # Display added sub-dealers with remove buttons
-        if st.session_state.ms_sub_dealers:
+        if st.session_state.ms_direct_dealers:
             st.divider()
             st.markdown("**Added Sub-Dealers:**")
-            for i, dealer in enumerate(st.session_state.ms_sub_dealers):
+            for i, dealer in enumerate(st.session_state.ms_direct_dealers):
                 col_dealer, col_remove = st.columns([4, 1])
                 with col_dealer:
                     st.text_input(f"Sub-Dealer {i+1}", value=dealer, disabled=True, key=f"ms_dealer_display_{i}")
                 with col_remove:
                     if st.button("❌", key=f"ms_remove_dealer_{i}"):
-                        st.session_state.ms_sub_dealers.pop(i)
+                        st.session_state.ms_direct_dealers.pop(i)
                         st.rerun()
 
     # =============================================================================
