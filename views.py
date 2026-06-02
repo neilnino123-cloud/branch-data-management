@@ -153,6 +153,9 @@ def render_admin_view(user):
 
     # ✅ Normalize columns for consistency
     df = normalize_df_columns(df)
+    
+    # 🛡️ FIX: Drop duplicate columns to prevent Streamlit/PyArrow crash
+    df = df.loc[:, ~df.columns.duplicated()]
 
     if not df.empty:
         st.dataframe(df, use_container_width=True)
@@ -300,6 +303,10 @@ def render_moderator_view(user):
 
     df = get_sheet_data(user["branch"])
     df = normalize_df_columns(df)  # ✅ Normalize columns
+    
+    # 🛡️ FIX: Drop duplicate columns to prevent Streamlit/PyArrow crash
+    df = df.loc[:, ~df.columns.duplicated()]
+    
     df_display = df.drop(columns=["username"], errors="ignore")
 
     if not df.empty:
@@ -573,6 +580,10 @@ def render_encoder_view(user):
 
     df = get_sheet_data(selected_branch) if user["branch"] else pd.DataFrame()
     df = normalize_df_columns(df)
+    
+    # 🛡️ FIX: Drop duplicate columns to prevent Streamlit/PyArrow crash
+    df = df.loc[:, ~df.columns.duplicated()]
+    
     df_display = df.drop(columns=["username"], errors="ignore")
 
     if not df.empty:
