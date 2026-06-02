@@ -31,6 +31,10 @@ USERS = {
     "sol_fats": {"password": "fats123", "role": "encoder", "branch": "TWMC SOUTHERN LEYTE", "team": "Fat's"},
     "sol_gfs": {"password": "gfs123", "role": "encoder", "branch": "TWMC SOUTHERN LEYTE", "team": "Gfs"},
     "sol_dcat": {"password": "dcat123", "role": "encoder", "branch": "TWMC SOUTHERN LEYTE", "team": "Dcat"},
+    "ley_dsp": {"password": "dsp123", "role": "dsp", "branch": "TWMC LEYTE", "team": "DSP"},
+    "sam_dsp": {"password": "dsp123", "role": "dsp", "branch": "TWMC SAMAR", "team": "DSP"},
+    "cal_dsp": {"password": "dsp123", "role": "dsp", "branch": "TWMC CALBAYOG", "team": "DSP"},
+    "sol_dsp": {"password": "dsp123", "role": "dsp", "branch": "TWMC SOUTHERN LEYTE", "team": "DSP"},
 }
 
 # Google Sheets Configuration - ID loaded from secrets
