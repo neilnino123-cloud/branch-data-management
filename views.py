@@ -153,9 +153,15 @@ def render_admin_view(user):
 
     # ✅ Normalize columns for consistency
     df = normalize_df_columns(df)
-    
-    # 🛡️ FIX: Drop duplicate columns to prevent Streamlit/PyArrow crash
-    df = df.loc[:, ~df.columns.duplicated()]
+
+    # 🛡️ BULLETPROOF FIX: Drop duplicate columns & clear index name
+    df = df.loc[:, ~df.columns.duplicated()].copy()
+    df.index.name = None  # Prevents index name from conflicting with column names
+
+    # 🔍 Fail-safe: If duplicates somehow still exist, stop and tell us exactly which ones
+    if df.columns.duplicated().any():
+        st.error(f"🚨 CRITICAL: Duplicate columns still exist: {df.columns[df.columns.duplicated()].tolist()}")
+        st.stop()
 
     if not df.empty:
         st.dataframe(df, use_container_width=True)
@@ -302,10 +308,11 @@ def render_moderator_view(user):
     st.caption("Complete transaction history")
 
     df = get_sheet_data(user["branch"])
-    df = normalize_df_columns(df)  # ✅ Normalize columns
+    df = normalize_df_columns(df)
     
-    # 🛡️ FIX: Drop duplicate columns to prevent Streamlit/PyArrow crash
-    df = df.loc[:, ~df.columns.duplicated()]
+    # 🛡️ BULLETPROOF FIX: Drop duplicate columns & clear index name
+    df = df.loc[:, ~df.columns.duplicated()].copy()
+    df.index.name = None
     
     df_display = df.drop(columns=["username"], errors="ignore")
 
@@ -581,8 +588,9 @@ def render_encoder_view(user):
     df = get_sheet_data(selected_branch) if user["branch"] else pd.DataFrame()
     df = normalize_df_columns(df)
     
-    # 🛡️ FIX: Drop duplicate columns to prevent Streamlit/PyArrow crash
-    df = df.loc[:, ~df.columns.duplicated()]
+    # 🛡️ BULLETPROOF FIX: Drop duplicate columns & clear index name
+    df = df.loc[:, ~df.columns.duplicated()].copy()
+    df.index.name = None
     
     df_display = df.drop(columns=["username"], errors="ignore")
 
