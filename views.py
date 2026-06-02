@@ -716,7 +716,7 @@ def render_market_survey_view(user):
         with col_dog:
             st.markdown("**DOGFOOD - PUPPY**")
             for brand in DOG:
-                key = f"ms_pet_dog_pup_{brand.replace(' ', '_').replace('\"', '')}"
+                key = f"ms_pet_dog_pup_{brand.replace(' ', '_').replace(' ', '')}"
                 st.number_input(brand, min_value=0, step=1, key=key)
             
         with col_maint:   
