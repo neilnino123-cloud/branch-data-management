@@ -39,8 +39,8 @@ def main():
         render_moderator_view(user)
     elif user["role"] == "encoder":
         render_encoder_view(user)
-    # elif user["role"] == "dsp":
-    #     render_market_survey_view(user)
+    elif user["role"] == "dsp":
+        render_market_survey_view(user)
     else:
         st.error("❌ Unauthorized role. Please contact administrator.")
 
