@@ -591,4 +591,282 @@ def render_encoder_view(user):
             st.metric("Latest Submission", latest.strftime("%m/%d %I:%M %p"))
         else:
             st.metric("Latest Submission", "N/A")
+            
+
+def render_market_survey_view(user):
+    st.header("📋 Market Survey Form")
+    st.caption(f"Encoder: `{user['username']}` | Branch: `{user.get('branch', 'N/A')}`")
+
+    # Initialize session state marker
+    if "ms_survey_ready" not in st.session_state:
+        st.session_state.ms_survey_ready = True
+
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["🏪 Store Info", "🌾 Feeds", " Petfood", "💊 Vetmed", "✅ Review & Submit"])
+
+    # =============================================================================
+    # TAB 1: STORE INFORMATION
+    # =============================================================================
+    with tab1:
+        st.subheader("🏪 Store Details")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.text_input("Name of Store", key="ms_store_name", placeholder="e.g., ABC AGRIVET")
+            st.text_input("Owner's Name", key="ms_owner_name", placeholder="e.g., JUAN DELA CRUZ")
+            
+            # ✅ Split Address into 3 fields
+            st.text_input("Street", key="ms_street", placeholder="Street / Purok / Zone")
+            st.text_input("Barangay", key="ms_barangay", placeholder="Barangay")
+            st.text_input("City", key="ms_city", placeholder="City")
+            st.text_input("Province", key="ms_province", placeholder="Province")
+            
+        with col2:
+            st.text_input("Contact No.", key="ms_contact", placeholder="09XX XXX XXXX")
+            st.date_input(
+                "Owner's B-Day", 
+                key="ms_bday",
+                min_value=date(1900, 1, 1),      # ✅ Now creates a proper date object
+                max_value=date.today()           # ✅ Blocks future birthdates
+            )
+            
+            st.markdown("**Store Class (Avg. bags sold/month):**")
+            c1, c2, c3 = st.columns(3)
+            c1.number_input("Class A (501+)", min_value=0, step=1, key="ms_class_a")
+            c2.number_input("Class B (101-500)", min_value=0, step=1, key="ms_class_b")
+            c3.number_input("Class C (≤100)", min_value=0, step=1, key="ms_class_c")
+
+        dist_type = st.selectbox("Distribution Type", ["DIRECT-SERVED", "SUB-DEALER"], key="ms_dist_type")
+    
+    # Initialize sub-dealer list in session state
+    if "ms_direct_dealers" not in st.session_state:
+        st.session_state.ms_direct_dealers = []
+    
+    if dist_type == "DIRECT-SERVED":
+        st.markdown("**Sub-Dealers List**")
+        st.caption("Add all stores serving as sub-dealers")
+        
+        # Input for new sub-dealer
+        new_dealer = st.text_input("Add Sub-Dealer", key="ms_new_sub_dealer", placeholder="Enter store name")
+        
+        col_add, col_clear = st.columns([1, 3])
+        with col_add:
+            if st.button("➕ Add Sub-Dealer", key="ms_add_dealer_btn"):
+                if new_dealer.strip():
+                    st.session_state.ms_sub_dealers.append(new_dealer.strip().upper())
+                    st.rerun()
+                else:
+                    st.warning("Please enter a store name")
+        
+        with col_clear:
+            if st.button("🗑️ Clear All", key="ms_clear_dealers_btn"):
+                st.session_state.ms_sub_dealers = []
+                st.rerun()
+        
+        # Display added sub-dealers with remove buttons
+        if st.session_state.ms_sub_dealers:
+            st.divider()
+            st.markdown("**Added Sub-Dealers:**")
+            for i, dealer in enumerate(st.session_state.ms_sub_dealers):
+                col_dealer, col_remove = st.columns([4, 1])
+                with col_dealer:
+                    st.text_input(f"Sub-Dealer {i+1}", value=dealer, disabled=True, key=f"ms_dealer_display_{i}")
+                with col_remove:
+                    if st.button("❌", key=f"ms_remove_dealer_{i}"):
+                        st.session_state.ms_sub_dealers.pop(i)
+                        st.rerun()
+
+    # =============================================================================
+    # TAB 2: FEEDS SURVEY
+    # =============================================================================
+    with tab2:
+        st.subheader("🌾 Feeds Survey")
+        st.caption("Enter number of bags sold per month")
+        
+        HOGS = ["ULTRAPAK", "PILMICO", "PIGROLAC", "UNIFEEDS", "CJ", "UNO", "PROMIX", "FEED EXPRESS", "VIEPRO", "VAST", "SUNJIN", "KARGADO", "HARVESTA", "NEW HOPE", "OTHERS"]
+        GF_50 = ["GALLIMAX", "GMP", "INFINITY", "FIREBIRD", "PRO-BOOST", "AVES", "GF", "OTHERS"]
+        LAYER = ["LAYEX", "PILMICO EXPRESS", "SARIMANOK", "UNIFEEDS", "UNO", "SUNJIN", "LAYENA", "GREENHILLS", "OTHERS"]
+        GF_24 = ["THUNDERBIRD", "SALTO", "SAGUPAAN", "WARHAWK", "OTHERS"]
+        BROILER = ["PILMICO", "GREENHILLS", "GMC", "UNIFEEDS", "OTHERS"]
+
+        def feed_section(title, brands, cols_per_row=3):
+            st.markdown(f"**{title}**")
+            cols = st.columns(cols_per_row)
+            for i, brand in enumerate(brands):
+                with cols[i % cols_per_row]:
+                    key = f"ms_feeds_{title.replace(' ', '_').lower()}_{brand.replace(' ', '_').replace('-', '_')}"
+                    st.number_input(brand, min_value=0, step=1, key=key)
+            st.divider()
+
+        feed_section("HOGS (50 kg)", HOGS, 3)
+        feed_section("GAMEFOWL (50 kg)", GF_50, 4)
+        feed_section("LAYER (50 kg)", LAYER, 3)
+        feed_section("GAMEFOWL (1X24 pack)", GF_24, 5)
+        feed_section("BROILER (50 kg)", BROILER, 5)
+
+    # =============================================================================
+    # TAB 3: PETFOOD SURVEY
+    # =============================================================================
+    with tab3:
+        st.subheader(" Petfood Survey")
+        st.caption("Enter number of units sold per month")
+        
+        DOG = ["PEDIGREE", "TOP BREED", "BEEF PRO", "BUDDY'S CHOMP", "DERBY", "YUM YUM", "DOGGY WOGGY", "VITALITY", "ROYAL CANIN", "BOW WOW", "WOOFY", "SPECIAL DOG", "OTHERS"]
+        CAT = ["TOP CAT", "WHISKAS", "DIXIE", "SPECIAL CAT", "AOZI", "ROYAL CANIN", "OTHERS"]
+
+        col_dog, col_maint, col_cat = st.columns(3)
+        with col_dog:
+            st.markdown("**DOGFOOD - PUPPY**")
+            for brand in DOG:
+                key = f'ms_pet_dog_pup_{brand.replace(" ", "_").replace("\'", "")}'
+                st.number_input(brand, min_value=0, step=1, key=key)
+            
+        with col_maint:   
+            st.markdown("**DOGFOOD - MAINTENANCE**")
+            for brand in DOG:
+                key = f"ms_pet_dog_maint_{brand.replace(' ', '_').replace(chr(39), '')}"
+                st.number_input(brand, min_value=0, step=1, key=key)
+                
+        with col_cat:
+            st.markdown("**CATFOOD**")
+            for brand in CAT:
+                key = f"ms_pet_cat_{brand.replace(' ', '_')}"
+                st.number_input(brand, min_value=0, step=1, key=key)
+
+    # =============================================================================
+    # TAB 4: VETMED SURVEY
+    # =============================================================================
+    with tab4:
+        st.subheader("💊 VETMED Survey")
+        st.caption("Indicate amount of purchase per month")
+        
+        VET_BRANDS = ["UNIVET", "EXCELLENCE", "LDI", "SAGUPAAN", "BATTLECOCK", "TRYCO", "OTHERS"]
+        VET_CATS = ["WSP", "INJECTABLE", "DISINFECTANT", "GAMEFOWL PREP"]
+
+        # Display column headers once
+        st.markdown("**Category:**")
+        header_cols = st.columns(4)
+        # for i, cat in enumerate(VET_CATS):
+        #     with header_cols[i]:
+        #         st.markdown(f"**{cat}**")
+        # st.divider()
+
+        # Display each brand with labeled inputs
+        for brand in VET_BRANDS:
+            st.markdown(f"**{brand}**")
+            cols = st.columns(4)
+            for i, cat in enumerate(VET_CATS):
+                with cols[i]:
+                    key = f"ms_vet_{brand.replace(' ', '_')}_{cat.replace(' ', '_')}"
+                    st.number_input(
+                        cat,  # ✅ This is the label
+                        min_value=0, 
+                        step=1, 
+                        key=key,
+                        label_visibility="visible"  # ✅ Make sure labels are visible
+                    )
+            st.divider()
+
+    # =============================================================================
+    # TAB 5: REVIEW & SUBMIT
+    # =============================================================================
+    with tab5:
+        st.subheader("✅ Review & Submit")
+        f = st.session_state
+
+        # 🔍 DEBUG: Temporarily show what's actually captured (remove after testing)
+        st.info(f"`ms_dist_type`: {repr(f.get('ms_dist_type'))} | `class_a`: {repr(f.get('ms_class_a'))}")
+
+        # ✅ 1. BUILD PAYLOAD WITH EXACT KEY MATCHING
+        payload = {
+            "timestamp": datetime.now().strftime("%Y-%m-%d %I:%M:%S %p"),
+            "username": user["username"],
+            # "branch": user.get("branch", ""),
+            "store_name": str(f.get("ms_store_name", "")).strip().upper(),
+            "owner_name": str(f.get("ms_owner_name", "")).strip().upper(),
+            "street": str(f.get("ms_street", "")).strip().upper(),
+            "barangay": str(f.get("ms_barangay", "")).strip().upper(),
+            "province": str(f.get("ms_province", "")).strip().upper(),
+            "contact_no": str(f.get("ms_contact", "")).strip(),
+            "owner_bday": f.get("ms_bday", "").strftime("%Y-%m-%d") if f.get("ms_bday") else "",
+            "class_a": int(f.get("ms_class_a", 0)),
+            "class_b": int(f.get("ms_class_b", 0)),
+            "class_c": int(f.get("ms_class_c", 0)),
+            "distribution": str(f.get("ms_dist_type", "")).strip(),
+        }
+
+        # ✅ 2. SUB-DEALERS
+        sub_dealers = st.session_state.get("ms_sub_dealers", [])
+        payload["sub_dealer_count"] = len(sub_dealers)
+        for i in range(1, 11):
+            payload[f"sub_dealer_{i}"] = sub_dealers[i-1] if i <= len(sub_dealers) else ""
+
+        # ✅ 3. FEEDS
+        HOGS = ["ULTAPAK", "PILMICO", "PIGROLAC", "UNIFEEDS", "CJ", "UNO", "PROMIX", "FEED EXPRESS", "VIEPRO", "VAST", "SUNJIN", "KARGADO", "HARVESTA", "NEW HOPE", "OTHERS"]
+        GF_50 = ["GALLIMAX", "GMP", "INFINITY", "FIREBIRD", "PRO-BOOST", "AVES", "GF", "OTHERS"]
+        LAYER = ["LAYEX", "PILMICO EXPRESS", "SARIMANOK", "UNIFEEDS", "UNO", "SUNJIN", "LAYENA", "GREENHILLS", "OTHERS"]
+        GF_24 = ["THUNDERBIRD", "SALTO", "SAGUPAAN", "WARHAWK", "OTHERS"]
+        BROILER = ["PILMICO", "GREENHILLS", "GMC", "UNIFEEDS", "OTHERS"]
+
+        # ✅ FEEDS - Clean column names (no parentheses)
+        for brand in HOGS:
+            key = f"ms_feeds_hogs_50_kg_{brand.replace(' ', '_').replace('-', '_')}"
+            payload[f"feeds_hogs_50_kg_{brand}"] = int(f.get(key, 0))
+
+        for brand in GF_50:
+            key = f"ms_feeds_gamefowl_50_kg_{brand.replace(' ', '_').replace('-', '_')}"
+            payload[f"feeds_gamefowl_50_kg_{brand}"] = int(f.get(key, 0))
+
+        for brand in LAYER:
+            key = f"ms_feeds_layer_50_kg_{brand.replace(' ', '_').replace('-', '_')}"
+            payload[f"feeds_layer_50_kg_{brand}"] = int(f.get(key, 0))
+
+        for brand in GF_24:
+            key = f"ms_feeds_gamefowl_ix24_pack_{brand.replace(' ', '_').replace('-', '_')}"
+            payload[f"feeds_gamefowl_ix24_pack_{brand}"] = int(f.get(key, 0))
+
+        for brand in BROILER:
+            key = f"ms_feeds_broiler_50_kg_{brand.replace(' ', '_').replace('-', '_')}"
+            payload[f"feeds_broiler_50_kg_{brand}"] = int(f.get(key, 0))
+
+        # ✅ 4. PETFOOD
+        DOG = ["PEDIGREE", "TOP BREED", "BEEF PRO", "BUDDY'S CHOMP", "DERBY", "YUM YUM", "DOGGY WOGGY", "VITALITY", "ROYAL CANIN", "BOW WOW", "WOOFY", "SPECIAL DOG", "OTHERS"]
+        CAT = ["TOP CAT", "WHISKAS", "DIXIE", "SPECIAL CAT", "AOZI", "ROYAL CANIN", "OTHERS"]
+
+        for brand in DOG:
+            safe = brand.replace(' ', '_').replace("'", "")
+            payload[f"pet_dog_pup_{brand}"] = int(f.get(f"ms_pet_dog_pup_{safe}", 0))
+            payload[f"pet_dog_maint_{brand}"] = int(f.get(f"ms_pet_dog_maint_{safe}", 0))
+
+        for brand in CAT:
+            payload[f"pet_cat_{brand}"] = int(f.get(f"ms_pet_cat_{brand.replace(' ', '_')}", 0))
+
+        # ✅ 5. VETMED
+        VET_BRANDS = ["UNIVET", "EXCELLENCE", "LDI", "SAGUPAAN", "BATTLECOCK", "TRYCO", "OTHERS"]
+        VET_CATS = ["WSP", "INJECTABLE", "DISINFECTANT", "GAMEFOWL PREP"]
+
+        for brand in VET_BRANDS:
+            for cat in VET_CATS:
+                key = f"ms_vet_{brand.replace(' ', '_')}_{cat.replace(' ', '_')}"
+                payload[f"vet_{brand}_{cat}"] = int(f.get(key, 0))
+
+        # ✅ VALIDATION
+        errors = []
+        if not payload["store_name"]: errors.append("Store Name is required")
+        if not payload["owner_name"]: errors.append("Owner's Name is required")
+        if payload["distribution"] == "SUB-DEALER" and payload["sub_dealer_count"] == 0:
+            errors.append("Please add at least 1 Sub-Dealer")
+
+        if errors:
+            for e in errors: st.error(f" {e}")
+        else:
+            st.success("✅ All required fields completed.")
+            if st.button("💾 Save to Google Sheets", type="primary", use_container_width=True):
+                with st.spinner("Saving..."):
+                    success = append_to_sheet("MARKET_SURVEY", payload)
+                    if success:
+                        st.success("🎉 Saved successfully!")
+                        for k in list(st.session_state.keys()):
+                            if k.startswith("ms_"): del st.session_state[k]
+                        st.rerun()
+                    else:
+                        st.error("❌ Failed to save.")
 
