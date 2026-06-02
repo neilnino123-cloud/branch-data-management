@@ -8,7 +8,8 @@ BRANCH_SHEETS = {
     "TWMC LEYTE": "Sheet_Branch1",
     "TWMC SAMAR": "Sheet_Branch2",
     "TWMC CALBAYOG": "Sheet_Branch3",
-    "TWMC SOUTHERN LEYTE": "Sheet_Branch4"
+    "TWMC SOUTHERN LEYTE": "Sheet_Branch4",
+    "MARKET_SURVEY": "MARKET_SURVEY"
 }
 
 # ⚠️ USER DATABASE - For production, use a real database with hashed passwords
