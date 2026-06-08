@@ -113,10 +113,10 @@ CALBAYOG_ENCODERS = {
                     }
 
 SOLEY_ENCODERS = {
-        "sol_fats" : {"ALJHON INDIENTE",
+        "sol_fats" : {"JACKY FEB",
                     "FELIX FRANCA",
                     "JAY KARL VERTUDAZO",
-                    "JERWIN BATHAN",
+                    "ARNOLD POLE",
                     "JONNEL PENE",
                     "JOVEN DEL ROSARIO",
                     "MIKE ANTHONY MIER",
