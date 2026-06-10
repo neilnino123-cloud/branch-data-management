@@ -5,7 +5,10 @@ from database import append_to_sheet, get_sheet_data, get_all_sheets_data, norma
 from config import BRANCH_SHEETS, LEYTE_CUSTOMERS, SAMAR_CUSTOMERS, CALBAYOG_CUSTOMERS, SOLEY_CUSTOMERS, PRODUCT_LIST, LEYTE_ENCODERS, SAMAR_ENCODERS, CALBAYOG_ENCODERS, SOLEY_ENCODERS, USERS
 import plotly.express as px
 import json
+from zoneinfo import ZoneInfo
 
+# Define Philippine Time
+PHT = ZoneInfo("Asia/Manila")
 
 def render_login_form():
     col1, col2, col3 = st.columns([4, 3, 4])
@@ -195,7 +198,7 @@ def render_admin_view(user):
     with col2:
         if "timestamp" in df.columns and not df["timestamp"].isna().all():
             latest = pd.to_datetime(df["timestamp"]).max()
-            st.metric("Latest Submission", latest.strftime("%m/%d %H:%M"))
+            st.metric("Latest Submission", latest.strftime("%m/%d %I:%M %p"))
         else:
             st.metric("Latest Submission", "N/A")
 
@@ -328,7 +331,7 @@ def render_moderator_view(user):
     with col2:
         if "timestamp" in df.columns and not df["timestamp"].isna().all():
             latest = pd.to_datetime(df["timestamp"]).max()
-            st.metric("Latest Submission", latest.strftime("%m/%d %H:%M"))
+            st.metric("Latest Submission", latest.strftime("%m/%d %I:%M %p"))
         else:
             st.metric("Latest Submission", "N/A")
 
@@ -457,7 +460,7 @@ def render_encoder_view(user):
                     st.error(f"❌ {err}")
             else:
                 data = {
-                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "timestamp": datetime.now().strftime("%Y-%m-%d %I:%M:%S %p"),
                     "username": user["username"],
                     "role_team": f"Encoder - {user.get('team', 'General')}",
                     "enc_name": st.session_state.enc_name.strip().upper(),
@@ -498,7 +501,7 @@ def render_encoder_view(user):
     with col2:
         if "timestamp" in df.columns and not df["timestamp"].isna().all():
             latest = pd.to_datetime(df["timestamp"]).max()
-            st.metric("Latest Submission", latest.strftime("%m/%d %H:%M"))
+            st.metric("Latest Submission", latest.strftime("%m/%d %I:%M %p"))
         else:
             st.metric("Latest Submission", "N/A")
 
