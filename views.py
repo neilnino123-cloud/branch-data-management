@@ -15,7 +15,7 @@ def render_login_form():
             with st.container(horizontal=True, horizontal_alignment="center"):
                 # ✅ Relative path for cloud compatibility
                 st.image(
-                    "logo4.png" if st.file_uploader else "logo4.png", width=150)
+                    "logo4.png" if st.file_uploader else "logo4.png", width=250)
             with st.container():
                 st.header("Please login to access your account",
                           text_alignment="center")
