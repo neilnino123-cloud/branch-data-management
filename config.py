@@ -9,7 +9,10 @@ BRANCH_SHEETS = {
     "TWMC SAMAR": "Sheet_Branch2",
     "TWMC CALBAYOG": "Sheet_Branch3",
     "TWMC SOUTHERN LEYTE": "Sheet_Branch4",
-    "MARKET_SURVEY": "MARKET_SURVEY"
+    "LEYTE MS": "LEYTE_MS",
+    "SAMAR MS": "SAMAR_MS",
+    "CALBAYOG MS": "CLB_MS",
+    "SOUTHERN LEYTE MS": "SOLEY_MS",
 }
 
 # ⚠️ USER DATABASE - For production, use a real database with hashed passwords
@@ -20,22 +23,23 @@ USERS = {
     "mod2": {"password": "mod123", "role": "moderator", "branch": "TWMC SAMAR"},
     "mod3": {"password": "mod123", "role": "moderator", "branch": "TWMC CALBAYOG"},
     "mod4": {"password": "mod123", "role": "moderator", "branch": "TWMC SOUTHERN LEYTE"},
-    "ley_fats": {"password": "fats123", "role": "encoder", "branch": "TWMC LEYTE", "team": "Fat's"},
-    "ley_gfs": {"password": "gfs123", "role": "encoder", "branch": "TWMC LEYTE", "team": "Gfs"},
-    "ley_dcat": {"password": "dcat123", "role": "encoder", "branch": "TWMC LEYTE", "team": "Dcat"},
-    "sam_fats": {"password": "fats123", "role": "encoder", "branch": "TWMC SAMAR", "team": "Fat's"},
-    "sam_gfs": {"password": "gfs123", "role": "encoder", "branch": "TWMC SAMAR", "team": "Gfs"},
-    "sam_dcat": {"password": "dcat123", "role": "encoder", "branch": "TWMC SAMAR", "team": "Dcat"},
-    "cal_fats": {"password": "fats123", "role": "encoder", "branch": "TWMC CALBAYOG", "team": "Fat's"},
-    "cal_gfs": {"password": "gfs123", "role": "encoder", "branch": "TWMC CALBAYOG", "team": "Gfs"},
-    "cal_dcat": {"password": "dcat123", "role": "encoder", "branch": "TWMC CALBAYOG", "team": "Dcat"},
-    "sol_fats": {"password": "fats123", "role": "encoder", "branch": "TWMC SOUTHERN LEYTE", "team": "Fat's"},
-    "sol_gfs": {"password": "gfs123", "role": "encoder", "branch": "TWMC SOUTHERN LEYTE", "team": "Gfs"},
-    "sol_dcat": {"password": "dcat123", "role": "encoder", "branch": "TWMC SOUTHERN LEYTE", "team": "Dcat"},
-    "ley_dsp": {"password": "dsp123", "role": "dsp", "branch": "TWMC LEYTE", "team": "DSP"},
-    "sam_dsp": {"password": "dsp123", "role": "dsp", "branch": "TWMC SAMAR", "team": "DSP"},
-    "cal_dsp": {"password": "dsp123", "role": "dsp", "branch": "TWMC CALBAYOG", "team": "DSP"},
-    "sol_dsp": {"password": "dsp123", "role": "dsp", "branch": "TWMC SOUTHERN LEYTE", "team": "DSP"},
+    "ley_fats": {"password": "enc123", "role": "encoder", "branch": "TWMC LEYTE", "team": "Fat's"},
+    "ley_gfs": {"password": "enc123", "role": "encoder", "branch": "TWMC LEYTE", "team": "Gfs"},
+    "ley_dcat": {"password": "enc123", "role": "encoder", "branch": "TWMC LEYTE", "team": "Dcat"},
+    "sam_fats": {"password": "enc123", "role": "encoder", "branch": "TWMC SAMAR", "team": "Fat's"},
+    "sam_gfs": {"password": "enc123", "role": "encoder", "branch": "TWMC SAMAR", "team": "Gfs"},
+    "sam_dcat": {"password": "enc123", "role": "encoder", "branch": "TWMC SAMAR", "team": "Dcat"},
+    "cal_fats": {"password": "enc123", "role": "encoder", "branch": "TWMC CALBAYOG", "team": "Fat's"},
+    "cal_gfs": {"password": "enc123", "role": "encoder", "branch": "TWMC CALBAYOG", "team": "Gfs"},
+    "cal_dcat": {"password": "enc123", "role": "encoder", "branch": "TWMC CALBAYOG", "team": "Dcat"},
+    "sol_fats": {"password": "enc123", "role": "encoder", "branch": "TWMC SOUTHERN LEYTE", "team": "Fat's"},
+    "sol_gfs": {"password": "enc123", "role": "encoder", "branch": "TWMC SOUTHERN LEYTE", "team": "Gfs"},
+    "sol_dcat": {"password": "enc123", "role": "encoder", "branch": "TWMC SOUTHERN LEYTE", "team": "Dcat"},
+    "ley_dsp": {"password": "dsp123", "role": "dsp", "branch": "LEYTE MS", "team": "DSP"},
+    "sam_dsp": {"password": "dsp123", "role": "dsp", "branch": "SAMAR MS", "team": "DSP"},
+    "cal_dsp": {"password": "dsp123", "role": "dsp", "branch": "CALBAYOG MS", "team": "DSP"},
+    "sol_dsp": {"password": "dsp123", "role": "dsp", "branch": "SOUTHERN LEYTE MS", "team": "DSP"},
+    
 }
 
 # Google Sheets Configuration - ID loaded from secrets
@@ -43,42 +47,37 @@ GOOGLE_SHEET_ID = st.secrets["general"]["GOOGLE_SHEET_ID"]
 
 # Product Database
 PRODUCT_LIST = {
-    "AMOXIL-V": {"SACHET", "BOX"},
-    "ELEC-V": {"SACHET", "BOX"},
+    "AMOXIL V": {"PC", "BOX"},
+    "ELEC V": {"PC", "BOX"},
     "NOROVIT": {"10ML", "50ML", "100ML"},
     "PPG": {"SACHET", "BOX"},
     "FEATHERSHINE": {"SACHET", "BOX"},
     "WORM X": {"PAD", "BOX"},
     "WORM X MAXX": {"PAD", "BOX"},
     "-- OTHERS --": {},
-    "DOXA-V": {"SACHET", "BOX", "KL", "PAD"},
-    "PARA-V": {"SACHET", "BOX", "KL", "PAD"},
-    "MULTI-V": {"SACHET", "BOX", "KL", "PAD"},
-    "TRIMAX": {"SACHET", "BOX"},
-    "MULTIMAX": {"SACHET", "BOX"},
-    "ELECTROMAX": {"SACHET", "BOX"},
+    "DOXA-V": {"PC", "BOX", "KL", "PAD"},
+    "PARA-V": {"PC", "BOX", "KL", "PAD"},
+    "TRIMAX": {"PC", "BOX"},
+    "MULTIMAX": {"PC", "BOX"},
+    "ELECTROMAX": {"PC", "BOX"},
     "MULTIMAX D5": {"BOTTLE", "BOX"},
-    "DOX-C-LIN GOLD": {"SACHET", "BOX"},
-    "DOX-C-TRIN GOLD": {"SACHET", "BOX"},
+    "DOX-C-LIN GOLD": {"PC", "BOX"},
+    "DOX-C-TRIN GOLD": {"PC", "BOX"},
     "IRON-VET": {"BOTTLE", "BOX"},
-    "BULATIGOK SD": {"SACHET", "BOX"},
-    "BULATIGOK 20%": {"SACHET", "BOX"},
-    "TRIFAST": {"SACHET", "BOX"},
+    "BULATIGOK SD": {"PC", "BOX"},
+    "TRIFAST": {"PC", "BOX"},
     "ALAMYCIN LA": {"BOTTLE", "BOX"}
 }
 
-# Encoder Lists (per branch)
 LEYTE_ENCODERS = {
         "ley_fats": {"BEN DADULA",
-                  "GEE FERNAND RIÑOS",
+                  "GEE RIÑOS",
                   "GLAIZA MAE BANTANOS",
                   "GREGORIO CABELTE JR.",
                   "JAIME PACAYDE",
                   "JAYVEE BAGUNAS",
-                  "JEFFREY YBAÑEZ",
                   "LEIGHMARK DAGOHOY",
-                  "MELCHOR PALAJOREN",
-                  "MARK WELL REI LAKE"},
+                  "MELCHOR PALAJOREN"},
         "ley_dcat" : {"LORRAINE ANGELA CABILIC"},
         "ley_gfs": {"LEONIL LIBY APOR"}
                   }
@@ -89,7 +88,6 @@ SAMAR_ENCODERS = {
                     "ARISTEO ASI",
                     "CLETUS JOMAR PENEDA",
                     "DONALD CABO",
-                    "EDISAR LIMBAWAN",
                     "JOHN LAWRENCE GUASIS",
                     "RALPH CARVAJAL",
                     "REDELON ABARRO",
@@ -115,65 +113,15 @@ CALBAYOG_ENCODERS = {
 SOLEY_ENCODERS = {
         "sol_fats" : {"JACKY FEB",
                     "FELIX FRANCA",
-                    "JAY KARL VERTUDAZO",
+                    "J CARL VERTUDAZO",
                     "ARNOLD POLE",
                     "JONNEL PENE",
                     "JOVEN DEL ROSARIO",
-                    "MIKE ANTHONY MIER",
-                     "SANDY MARILLA"},
-        "sol_dcat" : {"JUDEAH RUBILLOS"},
+                    "MIKE ANTHONY MIER"},
+        "sol_dcat" : {"SANDY MORILLA"},
         "sol_gfs" : {"RUEL MENIABLE"}
                 }
 
-# LEYTE_ENCODERS = ["-- Full Name --",
-#                   "BEN DADULA",
-#                   "GEE RIÑOS",
-#                   "GLAIZA MAE BANTANOS",
-#                   "GREGORIO CABELTE JR.",
-#                   "JAIME PACAYDE",
-#                   "JAYVEE BAGUNAS",
-#                   "LEIGHMARK DAGOHOY",
-#                   "MELCHOR PALAJOREN",
-#                   "LORRAINE ANGELA CABILIC",
-#                   "LEONIL LIBY APOR"
-#                   ]
-
-# SAMAR_ENCODERS = ["-- Full Name --",
-#                   "ALELOUR JABEGUERO",
-#                   "ARIEL OBILLO",
-#                   "ARISTEO ASI",
-#                   "CLETUS JOMAR PENEDA",
-#                   "DONALD CABO",
-#                   "JOHN LAWRENCE GUASIS",
-#                   "RALPH CARVAJAL",
-#                   "REDELON ABARRO",
-#                   "WENDYS LEGUA",
-#                   "JEREEY NAVIDAD",
-#                   "LOWELL LORENZO",
-#                   "LUIS DURAN"]
-
-# CALBAYOG_ENCODERS = ["-- Full Name --",
-#                   "ARCHIE CALUGCUGAN",
-#                   "DELDRINE GORDO",
-#                   "ELMER FUENTEBLANCA",
-#                   "JOEMAR ROTAMULA",
-#                   "JOMARI DOLON",
-#                   "MICHAEL ABLAZO",
-#                   "MICHAEL PANZO",
-#                   "ROBERT BALISBISAN",
-#                   "JASON CHIQUILLO",
-#                   "JAYSON ARANDIA"]
-
-# SOLEY_ENCODERS = ["-- Full Name --",
-#                   "ALJHON INDIENTE",
-#                   "FELIX FRANCA",
-#                   "J CARL VERTUDAZO",
-#                   "JERWIN BATHAN",
-#                   "JONNEL PENE",
-#                   "JOVEN DEL ROSARIO",
-#                   "MIKE ANTHONY MIER",
-#                   "SANDY MORILLA",
-#                   "RUEL MENIABLE"]
 
 # Customer Lists (trimmed for brevity - keep your full lists)
 LEYTE_CUSTOMERS = ["-- Select Customer --",
