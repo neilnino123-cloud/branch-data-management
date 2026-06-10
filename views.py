@@ -894,8 +894,8 @@ def render_market_survey_view(user):
                 errors.append("Owner's Name is required")
             
             # Only require sub-dealers for DIRECT-SERVED stores
-            if payload["distribution"] == "DIRECT-SERVED" and payload["sub_dealer_count"] == 0:
-                errors.append("Please add at least 1 Sub-Dealer")
+            # if payload["distribution"] == "DIRECT-SERVED" and payload["sub_dealer_count"] == 0:
+            #     errors.append("Please add at least 1 Sub-Dealer")
 
             if errors:
                 for e in errors: 
