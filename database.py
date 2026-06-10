@@ -81,7 +81,9 @@ def get_all_sheets_data() -> pd.DataFrame:
             records = worksheet.get_all_records()
             if records:
                 df = pd.DataFrame(records)
-                df.insert(0, "Source_Branch", branch)
+                # ✅ FIX: Only insert if not already present to avoid duplicates
+                if "Source_Branch" not in df.columns:
+                    df.insert(0, "Source_Branch", branch)
                 return df
             return None
 
@@ -134,4 +136,12 @@ def normalize_df_columns(df: pd.DataFrame) -> pd.DataFrame:
     """Normalize column names to lowercase with underscores for consistency"""
     if df.empty:
         return df
-    return df.rename(columns=lambda x: x.strip().lower().replace(" ", "_"))
+    
+    # Normalize column names
+    df.columns = [str(x).strip().lower().replace(" ", "_") for x in df.columns]
+    
+    # ✅ FIX: Drop duplicate columns to prevent ValueError in st.dataframe
+    # This keeps the first occurrence of any duplicate column and removes the rest
+    df = df.loc[:, ~df.columns.duplicated()]
+    
+    return df
