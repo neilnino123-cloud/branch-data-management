@@ -13,7 +13,6 @@ def get_gsheet_client():
 
     # 🔑 FIX: Handle newline escaping issues that break JWT signatures
     if "private_key" in sa:
-        # Replace literal \n strings with actual newlines, and remove extra whitespace
         sa["private_key"] = sa["private_key"].replace('\\n', '\n').strip()
 
     scopes = [
@@ -98,7 +97,7 @@ def get_all_sheets_data() -> pd.DataFrame:
 
 
 def append_to_sheet(branch: str, data: dict) -> bool:
-    """Append a row to the specified branch sheet with error handling"""
+    """Append a row to the specified branch sheet with dynamic column mapping"""
     client = get_gsheet_client()
     sheet_name = BRANCH_SHEETS.get(branch)
 
@@ -110,23 +109,20 @@ def append_to_sheet(branch: str, data: dict) -> bool:
         spreadsheet = client.open_by_key(GOOGLE_SHEET_ID)
         worksheet = spreadsheet.worksheet(sheet_name)
 
-        # Order must match your Google Sheet columns
-        row = [
-            data.get("timestamp"),
-            data.get("username"),
-            data.get("role_team"),
-            data.get("enc_name"),
-            data.get("store_name"),
-            data.get("product"),
-            data.get("quantity"),
-            data.get("uom"),
-            data.get("notes")
-        ]
-
-        def _append():
+        # ✅ DYNAMIC: Get the actual column headers from the Google Sheet
+        def _get_headers_and_append():
+            headers = worksheet.row_values(1)  # Get first row (column headers)
+            
+            # ✅ Build row in the exact order of Google Sheet columns
+            row = []
+            for header in headers:
+                # Get value from data dict, or empty string if not present
+                value = data.get(header, "")
+                row.append(value)
+            
             worksheet.append_row(row, value_input_option="USER_ENTERED")
 
-        _safe_api_call(_append)
+        _safe_api_call(_get_headers_and_append)
         return True
 
     except Exception as e:
