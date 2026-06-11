@@ -905,6 +905,7 @@ def render_market_survey_view(user):
     if "ms_initialized" not in st.session_state:
         st.session_state.ms_initialized = True
         st.session_state.ms_save_success = False
+        st.session_state.ms_attempted_submit = False
         
         st.session_state.ms_store_name = ""
         st.session_state.ms_owner_name = ""
@@ -951,25 +952,123 @@ def render_market_survey_view(user):
     with tab1:
         st.subheader("🏪 Store Details")
         col1, col2 = st.columns(2)
+        
+        # Validation flags
+        validation_errors = []
+        
         with col1:
-            st.text_input("Name of Store", key="ms_store_name", placeholder="e.g., ABC AGRIVET")
-            st.text_input("Owner's Name", key="ms_owner_name", placeholder="e.g., JUAN DELA CRUZ")
-            st.text_input("Street", key="ms_street", placeholder="Street / Purok / Zone")
-            st.text_input("Barangay", key="ms_barangay", placeholder="Barangay")
-            st.text_input("City", key="ms_city", placeholder="City")
-            st.text_input("Province", key="ms_province", placeholder="Province")
+            # Store Name - Required first field
+            store_name_input = st.text_input("Name of Store *", key="ms_store_name", placeholder="e.g., ABC AGRIVET")
+            if not store_name_input.strip():
+                validation_errors.append("Store Name is required")
+            
+            # Owner's Name - Required, only after Store Name is filled
+            if store_name_input.strip():
+                owner_name_input = st.text_input("Owner's Name *", key="ms_owner_name", placeholder="e.g., JUAN DELA CRUZ")
+                if not owner_name_input.strip():
+                    validation_errors.append("Owner's Name is required")
+            else:
+                owner_name_input = st.text_input("Owner's Name *", key="ms_owner_name", placeholder="e.g., JUAN DELA CRUZ", disabled=True)
+                validation_errors.append("Please fill in Store Name first")
+            
+            # Street - Required, only after Owner's Name is filled
+            if owner_name_input.strip():
+                street_input = st.text_input("Street", key="ms_street", placeholder="Street / Purok / Zone")
+            else:
+                street_input = st.text_input("Street", key="ms_street", placeholder="Street / Purok / Zone", disabled=True)
+            
+            # Barangay - Required, only after Street is filled
+            if street_input.strip():
+                barangay_input = st.text_input("Barangay *", key="ms_barangay", placeholder="Barangay")
+                if not barangay_input.strip():
+                    validation_errors.append("Barangay is required")
+            else:
+                barangay_input = st.text_input("Barangay *", key="ms_barangay", placeholder="Barangay", disabled=True)
+                if owner_name_input.strip():  # Only show error if previous field is filled
+                    validation_errors.append("Please fill in Street first")
+            
+            # City - Required, only after Barangay is filled
+            if barangay_input.strip():
+                city_input = st.text_input("City *", key="ms_city", placeholder="City")
+                if not city_input.strip():
+                    validation_errors.append("City is required")
+            else:
+                city_input = st.text_input("City *", key="ms_city", placeholder="City", disabled=True)
+                validation_errors.append("Please fill in Barangay first")
+            
+            # Province - Required, only after City is filled
+            if city_input.strip():
+                province_input = st.text_input("Province *", key="ms_province", placeholder="Province")
+                if not province_input.strip():
+                    validation_errors.append("Province is required")
+            else:
+                province_input = st.text_input("Province *", key="ms_province", placeholder="Province", disabled=True)
+                validation_errors.append("Please fill in City first")
             
         with col2:
-            st.text_input("Contact No.", key="ms_contact", placeholder="09XX XXX XXXX")
-            st.date_input("Owner's B-Day", key="ms_bday", min_value=date(1900, 1, 1), max_value=date.today())
+            # Contact No. - Required, only after Province is filled, must be valid mobile number
+            if province_input.strip():
+                contact_input = st.text_input("Contact No. *", key="ms_contact", placeholder="09XX XXX XXXX")
+                if contact_input.strip():
+                    # Validate Philippine mobile number format (09XX XXX XXXX or 09XXXXXXXXX)
+                    import re
+                    contact_clean = contact_input.replace(" ", "").replace("-", "")
+                    if not re.match(r"^09\d{9}$", contact_clean):
+                        validation_errors.append("Please enter a valid Philippine mobile number (e.g., 0917 123 4567)")
+                else:
+                    validation_errors.append("Contact Number is required")
+            else:
+                contact_input = st.text_input("Contact No. *", key="ms_contact", placeholder="09XX XXX XXXX", disabled=True)
+                validation_errors.append("Please fill in Province first")
+            
+            # Owner's B-Day - Required, only after Contact No. is filled and valid, age must be >= 20
+            if contact_input.strip() and len(validation_errors) == 0 or (contact_input.strip() and "Contact No." not in str(validation_errors)):
+                bday_input = st.date_input("Owner's B-Day *", key="ms_bday", min_value=date(1900, 1, 1), max_value=date.today())
+                
+                # Calculate age
+                if bday_input:
+                    today = date.today()
+                    age = today.year - bday_input.year - ((today.month, today.day) < (bday_input.month, bday_input.day))
+                    
+                    if age < 20:
+                        validation_errors.append(f"Owner must be at least 20 years old (current age: {age})")
+            else:
+                bday_input = st.date_input("Owner's B-Day *", key="ms_bday", min_value=date(1900, 1, 1), max_value=date.today(), disabled=True)
+                if contact_input.strip():
+                    validation_errors.append("Please enter a valid Contact Number first")
             
             st.markdown("**Store Class (Avg. bags sold/month):**")
             c1, c2, c3 = st.columns(3)
-            c1.number_input("Class A (501+)", min_value=0, step=1, key="ms_class_a")
-            c2.number_input("Class B (101-500)", min_value=0, step=1, key="ms_class_b")
-            c3.number_input("Class C (≤100)", min_value=0, step=1, key="ms_class_c")
+            
+            # Class A - Only after B-Day is valid
+            if bday_input and len([e for e in validation_errors if "20 years old" in e]) == 0:
+                class_a_input = c1.number_input("Class A (501+)", min_value=501, step=1, key="ms_class_a", 
+                                              help="Enter number of bags sold (must be 501 or more)")
+            else:
+                class_a_input = c1.number_input("Class A (501+)", min_value=501, step=1, key="ms_class_a", disabled=True)
+            
+            # Class B - Only after Class A is filled or skipped
+            if bday_input and len([e for e in validation_errors if "20 years old" in e]) == 0:
+                class_b_input = c2.number_input("Class B (101-500)", min_value=101, max_value=500, step=1, key="ms_class_b",
+                                              help="Enter number of bags sold (101-500)")
+            else:
+                class_b_input = c2.number_input("Class B (101-500)", min_value=101, max_value=500, step=1, key="ms_class_b", disabled=True)
+            
+            # Class C - Only after Class B is filled or skipped
+            if bday_input and len([e for e in validation_errors if "20 years old" in e]) == 0:
+                class_c_input = c3.number_input("Class C (≤100)", min_value=0, max_value=100, step=1, key="ms_class_c",
+                                              help="Enter number of bags sold (0-100)")
+            else:
+                class_c_input = c3.number_input("Class C (≤100)", min_value=0, max_value=100, step=1, key="ms_class_c", disabled=True)
 
-        st.selectbox("Distribution Type", ["DIRECT-SERVED", "SUB-DEALER"], key="ms_dist_type")
+        # Distribution Type - Always available
+        st.selectbox("Distribution Type *", ["DIRECT-SERVED", "SUB-DEALER"], key="ms_dist_type")
+        
+        # Show validation errors at the top of the tab
+        if validation_errors:
+            st.error("⚠️ Please correct the following errors:")
+            for error in validation_errors:
+                st.text(f"• {error}")
     
     if st.session_state.ms_dist_type == "DIRECT-SERVED":
         with tab1:
@@ -1138,7 +1237,7 @@ def render_market_survey_view(user):
                 payload[f"vet_{safe_brand}_{safe_cat}"] = int(st.session_state.get(key, 0))
 
         if st.button("💾 Save to Google Sheets", type="primary", use_container_width=True):
-            st.session_state.ms_attempted_submit = True  # Mark that user tried to submit
+            st.session_state.ms_attempted_submit = True
             
             with st.spinner("Saving..."):
                 user_branch = user.get("branch", "")
@@ -1159,16 +1258,28 @@ def render_market_survey_view(user):
             st.success("🎉 Data saved successfully! Form has been reset.")
             if st.button("➕ Submit Another Entry"):
                 st.session_state.ms_save_success = False
-                st.session_state.ms_attempted_submit = False  # Reset submit flag
+                st.session_state.ms_attempted_submit = False
                 st.rerun()
         else:
-            # ✅ Only validate and show errors if user clicked submit button
             if st.session_state.get("ms_attempted_submit", False):
                 errors = []
                 if not store_name: 
                     errors.append("Store Name is required")
                 if not owner_name: 
                     errors.append("Owner's Name is required")
+                if not barangay:
+                    errors.append("Barangay is required")
+                if not city:
+                    errors.append("City is required")
+                if not province:
+                    errors.append("Province is required")
+                if not contact_no:
+                    errors.append("Contact Number is required")
+                else:
+                    import re
+                    contact_clean = contact_no.replace(" ", "").replace("-", "")
+                    if not re.match(r"^09\d{9}$", contact_clean):
+                        errors.append("Please enter a valid Philippine mobile number")
 
                 if errors:
                     for e in errors: 
@@ -1176,4 +1287,4 @@ def render_market_survey_view(user):
                 else:
                     st.success("✅ All required fields completed.")
             else:
-                st.info("📝 Please fill in all required fields and click Save.")
+                st.info("📝 Please fill in all required fields (marked with *) and click Save.")
