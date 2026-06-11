@@ -1159,6 +1159,7 @@ def render_market_survey_view(user):
                 st.session_state.ms_save_success = False
                 st.rerun()
         else:
+            # ✅ Only show validation errors when NOT in success state
             errors = []
             if not store_name: 
                 errors.append("Store Name is required")
