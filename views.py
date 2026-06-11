@@ -1138,6 +1138,8 @@ def render_market_survey_view(user):
                 payload[f"vet_{safe_brand}_{safe_cat}"] = int(st.session_state.get(key, 0))
 
         if st.button("💾 Save to Google Sheets", type="primary", use_container_width=True):
+            st.session_state.ms_attempted_submit = True  # Mark that user tried to submit
+            
             with st.spinner("Saving..."):
                 user_branch = user.get("branch", "")
                 success = append_to_sheet(user_branch, payload)
@@ -1157,17 +1159,21 @@ def render_market_survey_view(user):
             st.success("🎉 Data saved successfully! Form has been reset.")
             if st.button("➕ Submit Another Entry"):
                 st.session_state.ms_save_success = False
+                st.session_state.ms_attempted_submit = False  # Reset submit flag
                 st.rerun()
         else:
-            # ✅ Only show validation errors when NOT in success state
-            errors = []
-            if not store_name: 
-                errors.append("Store Name is required")
-            if not owner_name: 
-                errors.append("Owner's Name is required")
+            # ✅ Only validate and show errors if user clicked submit button
+            if st.session_state.get("ms_attempted_submit", False):
+                errors = []
+                if not store_name: 
+                    errors.append("Store Name is required")
+                if not owner_name: 
+                    errors.append("Owner's Name is required")
 
-            if errors:
-                for e in errors: 
-                    st.error(f"❌ {e}")
+                if errors:
+                    for e in errors: 
+                        st.error(f"❌ {e}")
+                else:
+                    st.success("✅ All required fields completed.")
             else:
-                st.success("✅ All required fields completed.")
+                st.info("📝 Please fill in all required fields and click Save.")
