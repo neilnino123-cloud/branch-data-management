@@ -111,15 +111,29 @@ def append_to_sheet(branch: str, data: dict) -> bool:
         spreadsheet = client.open_by_key(GOOGLE_SHEET_ID)
         worksheet = spreadsheet.worksheet(sheet_name)
 
-        # ✅ DYNAMIC: Get the actual column headers from the Google Sheet
         def _get_headers_and_append():
             headers = worksheet.row_values(1)  # Get first row (column headers)
+            
+            # ✅ FIX: Normalize headers to lowercase for case-insensitive matching
+            # Create a mapping from lowercase header -> original header
+            header_map = {}
+            for header in headers:
+                normalized = str(header).strip().lower().replace(" ", "_")
+                header_map[normalized] = header
             
             # ✅ Build row in the exact order of Google Sheet columns
             row = []
             for header in headers:
-                # Get value from data dict, or empty string if not present
-                value = data.get(header, "")
+                # Normalize the header to match data dictionary keys
+                normalized = str(header).strip().lower().replace(" ", "_")
+                
+                # Try to get value using normalized key
+                value = data.get(normalized, "")
+                
+                # If not found, try the original header (for backwards compatibility)
+                if not value and normalized != header:
+                    value = data.get(header, "")
+                
                 row.append(value)
             
             worksheet.append_row(row, value_input_option="USER_ENTERED")
