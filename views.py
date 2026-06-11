@@ -1057,21 +1057,23 @@ def render_market_survey_view(user):
             st.markdown("**Store Class (Avg. bags sold/month):**")
             c1, c2, c3 = st.columns(3)
 
+            # ✅ Safely define bday_valid here to prevent NameError
+            bday_val_state = st.session_state.get("ms_bday")
+            age_error_exists = any("20 years old" in e for e in validation_errors)
+            bday_valid = bool(bday_val_state) and not age_error_exists
+
             if bday_valid:
-                class_a_input = c1.number_input("Class A (501+)", min_value=0, step=1, key="ms_class_a", 
-                                              help="Enter number of bags sold (must be 501 or more)")
+                class_a_input = c1.number_input("Class A (501+)", min_value=0, step=1, key="ms_class_a", help="Enter number of bags sold (must be 501 or more)")
             else:
                 class_a_input = c1.number_input("Class A (501+)", min_value=0, step=1, key="ms_class_a", disabled=True)
 
             if bday_valid:
-                class_b_input = c2.number_input("Class B (101-500)", min_value=0, step=1, key="ms_class_b",
-                                              help="Enter number of bags sold (101-500)")
+                class_b_input = c2.number_input("Class B (101-500)", min_value=0, step=1, key="ms_class_b", help="Enter number of bags sold (101-500)")
             else:
                 class_b_input = c2.number_input("Class B (101-500)", min_value=0, step=1, key="ms_class_b", disabled=True)
 
             if bday_valid:
-                class_c_input = c3.number_input("Class C (≤100)", min_value=0, step=1, key="ms_class_c",
-                                              help="Enter number of bags sold (0-100)")
+                class_c_input = c3.number_input("Class C (≤100)", min_value=0, step=1, key="ms_class_c", help="Enter number of bags sold (0-100)")
             else:
                 class_c_input = c3.number_input("Class C (≤100)", min_value=0, step=1, key="ms_class_c", disabled=True)
 
