@@ -40,6 +40,9 @@ def login(username: str, password: str) -> dict | None:
             username, user["role"], user.get("branch"), user.get("team")
         )
 
+        # ✅ Persist token in URL query params to survive page refreshes/mobile backgrounding
+        st.query_params["token"] = token
+        
         # Store in session state (Streamlit Cloud compatible)
         st.session_state.user = {
             "username": username,
@@ -56,6 +59,9 @@ def login(username: str, password: str) -> dict | None:
 
 def logout():
     """Clear user session"""
+    # ✅ Clear token from URL to prevent auto-login after logout
+    st.query_params.clear()
+    
     st.session_state.pop("user", None)
     st.session_state.pop("auth_token", None)
     st.session_state._auth_state = "idle"
@@ -71,7 +77,18 @@ def get_current_user() -> dict | None:
         if token and validate_token(token):
             return st.session_state.user
 
-    # Priority 2: Try to restore from stored token (page refresh scenario)
-    # Note: Streamlit Cloud doesn't persist session_state perfectly across reruns
-    # For production, consider a proper backend auth system
+    # Priority 2: Try to restore from URL query parameter (page refresh / mobile backgrounding)
+    token = st.query_params.get("token")
+    if token:
+        user_data = validate_token(token)
+        if user_data:
+            # Restore session state
+            st.session_state.user = user_data
+            st.session_state.auth_token = token
+            st.session_state._auth_state = "authenticated"
+            return user_data
+        else:
+            # Token is invalid or expired, clear it
+            st.query_params.clear()
+            
     return None
