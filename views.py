@@ -1306,7 +1306,23 @@ def render_market_survey_view(user):
                     contact_clean = contact_no.replace(" ", "").replace("-", "")
                     if not re.match(r"^09\d{9}$", contact_clean):
                         errors.append("Please enter a valid Philippine mobile number")
-
+    
+                # ✅ Validate that only ONE class is selected
+                class_a_val = int(st.session_state.get("ms_class_a", 0))
+                class_b_val = int(st.session_state.get("ms_class_b", 0))
+                class_c_val = int(st.session_state.get("ms_class_c", 0))
+                
+                classes_with_values = sum([
+                    1 if class_a_val > 0 else 0,
+                    1 if class_b_val > 0 else 0,
+                    1 if class_c_val > 0 else 0
+                ])
+                
+                if classes_with_values == 0:
+                    errors.append("Please select at least one Store Class (A, B, or C)")
+                elif classes_with_values > 1:
+                    errors.append("Please select only ONE Store Class per store (not multiple classes)")
+    
                 if errors:
                     for e in errors: 
                         st.error(f"❌ {e}")
