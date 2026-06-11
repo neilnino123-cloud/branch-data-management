@@ -92,7 +92,7 @@ SAMAR_ENCODERS = {
                     "RALPH CARVAJAL",
                     "REDELON ABARRO",
                     "WENDYS LEGUA"},
-        "sam_dcat" : {"JEREEY NAVIDAD",
+        "sam_dcat" : {"JEFFREY NAVIDAD",
                     "LOWELL LORENZO"},
         "sam_gfs" : {"LUIS DURAN"}
                 }
