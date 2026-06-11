@@ -196,12 +196,21 @@ def render_admin_view(user):
     with col1:
         st.metric("Total Submissions", len(df))
     with col2:
-        if "timestamp" in df.columns and not df["timestamp"].isna().all():
-            latest = pd.to_datetime(df["timestamp"]).max()
-            st.metric("Latest Submission", latest.strftime("%m/%d %I:%M %p"))
+        if "timestamp" in df.columns:
+            # ✅ Safely parse the 24-hour timestamp
+            latest = pd.to_datetime(df["timestamp"], errors='coerce').max()
+            
+            if pd.notna(latest):
+                # ✅ Ensure it's treated as Philippine Time
+                if latest.tzinfo is None:
+                    latest = latest.tz_localize('Asia/Manila')
+                
+                # ✅ Display in 12-hour format with AM/PM
+                st.metric("Latest Submission", latest.strftime("%m/%d %I:%M %p"))
+            else:
+                st.metric("Latest Submission", "N/A")
         else:
             st.metric("Latest Submission", "N/A")
-
 
 def render_moderator_view(user):
     with st.container(horizontal=True, horizontal_alignment="distribute"):
@@ -329,12 +338,21 @@ def render_moderator_view(user):
     with col1:
         st.metric("Total Submissions", len(df))
     with col2:
-        if "timestamp" in df.columns and not df["timestamp"].isna().all():
-            latest = pd.to_datetime(df["timestamp"]).max()
-            st.metric("Latest Submission", latest.strftime("%m/%d %I:%M %p"))
+        if "timestamp" in df.columns:
+            # ✅ Safely parse the 24-hour timestamp
+            latest = pd.to_datetime(df["timestamp"], errors='coerce').max()
+            
+            if pd.notna(latest):
+                # ✅ Ensure it's treated as Philippine Time
+                if latest.tzinfo is None:
+                    latest = latest.tz_localize('Asia/Manila')
+                
+                # ✅ Display in 12-hour format with AM/PM
+                st.metric("Latest Submission", latest.strftime("%m/%d %I:%M %p"))
+            else:
+                st.metric("Latest Submission", "N/A")
         else:
             st.metric("Latest Submission", "N/A")
-
 
 def get_encode_list(branch: str, team: str = None) -> list[str]:
     BRANCH_ENCODER_MAP = {
@@ -470,7 +488,7 @@ def render_encoder_view(user):
                     st.error(f"❌ {err}")
             else:
                 data = {
-                    "timestamp": datetime.now().strftime("%Y-%m-%d %I:%M:%S %p"),
+                    "timestamp": datetime.now(PHT).strftime("%Y-%m-%d %H:%M:%S"),
                     "username": user["username"],
                     "role_team": f"Encoder - {user.get('team', 'General')}",
                     "name": st.session_state.enc_name.strip().upper(),  # ✅ Changed from "enc_name" to "name"
@@ -510,9 +528,19 @@ def render_encoder_view(user):
     with col1:
         st.metric("Total Submissions", len(df))
     with col2:
-        if "timestamp" in df.columns and not df["timestamp"].isna().all():
-            latest = pd.to_datetime(df["timestamp"]).max()
-            st.metric("Latest Submission", latest.strftime("%m/%d %I:%M %p"))
+        if "timestamp" in df.columns:
+            # ✅ Safely parse the 24-hour timestamp
+            latest = pd.to_datetime(df["timestamp"], errors='coerce').max()
+            
+            if pd.notna(latest):
+                # ✅ Ensure it's treated as Philippine Time
+                if latest.tzinfo is None:
+                    latest = latest.tz_localize('Asia/Manila')
+                
+                # ✅ Display in 12-hour format with AM/PM
+                st.metric("Latest Submission", latest.strftime("%m/%d %I:%M %p"))
+            else:
+                st.metric("Latest Submission", "N/A")
         else:
             st.metric("Latest Submission", "N/A")
 
@@ -800,7 +828,7 @@ def render_market_survey_view(user):
 
         # ✅ Build payload with City
         payload = {
-            "timestamp": datetime.now().strftime("%Y-%m-%d %I:%M:%S %p"),
+            "timestamp": datetime.now(PHT).strftime("%Y-%m-%d %H:%M:%S"),
             "username": user.get("username", ""),
             "branch": user.get("branch", ""),
             "store_name": store_name,
