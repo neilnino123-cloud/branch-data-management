@@ -10,23 +10,22 @@ from zoneinfo import ZoneInfo
 # Define Philippine Time
 PHT = ZoneInfo("Asia/Manila")
 
+# ✅ Define which branches are Market Survey (to exclude from encoder charts)
+MS_BRANCHES = ["LEYTE MS", "SAMAR MS", "CALBAYOG MS", "SOUTHERN LEYTE MS"]
+ENCODER_BRANCHES = [b for b in BRANCH_SHEETS.keys() if b not in MS_BRANCHES]
+
 def render_login_form():
     col1, col2, col3 = st.columns([4, 3, 4])
     with col2:
         with st.container(border=True, key="login_form"):
             st.write("\n")
             with st.container(horizontal=True, horizontal_alignment="center"):
-                # ✅ Relative path for cloud compatibility
-                st.image(
-                    "logo4.png" if st.file_uploader else "logo4.png", width=250)
+                st.image("logo4.png" if st.file_uploader else "logo4.png", width=250)
             with st.container():
-                st.header("Please login to access your account",
-                          text_alignment="center")
+                st.header("Please login to access your account", text_alignment="center")
                 with st.form("login_form", border=False):
-                    username = st.text_input(
-                        "Username", placeholder="Enter username")
-                    password = st.text_input(
-                        "Password", type="password", placeholder="Enter password")
+                    username = st.text_input("Username", placeholder="Enter username")
+                    password = st.text_input("Password", type="password", placeholder="Enter password")
                     st.write("\n")
                     submit = st.form_submit_button("Login", width="stretch")
 
@@ -40,8 +39,7 @@ def render_login_form():
                             else:
                                 st.error("❌ Invalid credentials.")
                         else:
-                            st.warning(
-                                "⚠️ Please enter both username and password.")
+                            st.warning("⚠️ Please enter both username and password.")
 
     st.markdown("""
     <style>
@@ -58,159 +56,268 @@ def render_admin_view(user):
             get_all_sheets_data.clear()
             st.rerun()
     
-    branches = ["All Branches"] + list(BRANCH_SHEETS.keys())
-    selected_branch = st.selectbox("Select Branch to View", branches)
-    st.write("\n")
+    # ✅ Create tabs for Encoder Data and Market Survey Data
+    tab_encoder, tab_survey = st.tabs(["📊 Encoder SMAHC Pullout", "📋 Market Survey Data"])
+    
+    # =============================================================================
+    # TAB 1: ENCODER SALES DATA
+    # =============================================================================
+    with tab_encoder:
+        branches = ["All Branches"] + ENCODER_BRANCHES  # ✅ Only encoder branches
+        selected_branch = st.selectbox("Select Branch to View", branches, key="admin_encoder_branch")
+        st.write("\n")
 
-    if selected_branch == "All Branches":
-        df = get_all_sheets_data()
-    else:
-        df = get_sheet_data(selected_branch)
-
-    # ✅ Normalize columns for consistency
-    df = normalize_df_columns(df)
-
-    if not df.empty:
-        st.dataframe(df, use_container_width=True)
-
-        # =============================================================================
-        # 📊 DYNAMIC BAR CHART (Progressive Filtering Fix)
-        # =============================================================================
-        st.divider()
-        st.subheader("📊 Sales Breakdown by Encoder & Product")
-
-        # Start with full dataset
-        df_prog = df.copy()
-
-        col_f1, col_f2, col_f3, col_f4 = st.columns(4)
-
-        with col_f1:
-            branch_options = ["All Branches"] + list(BRANCH_SHEETS.keys())
-            bar_branch = st.selectbox("Filter by Branch", branch_options, key="bar_branch")
-
-        # 1️ Apply Branch Filter immediately
-        if bar_branch != "All Branches" and "source_branch" in df_prog.columns:
-            df_prog = df_prog[df_prog["source_branch"] == bar_branch]
-
-        with col_f2:
-            enc_col = next((c for c in ["enc_name", "encoder", "fullname", "full_name", "name"] if c in df_prog.columns), None)
-            encoders = ["All Encoders"]
-            if enc_col and not df_prog.empty:
-                enc_list = df_prog[enc_col].dropna().astype(str).str.strip().unique().tolist()
-                encoders += sorted([e for e in enc_list if e])
-            bar_encoder = st.selectbox("Filter by Encoder", encoders, key="bar_encoder")
-
-        # 2️⃣ Apply Encoder Filter immediately (now product dropdown only sees this encoder's data)
-        if bar_encoder != "All Encoders" and enc_col:
-            df_prog = df_prog[df_prog[enc_col] == bar_encoder]
-
-        with col_f3:
-            products = ["All Products"]
-            if not df_prog.empty and "product" in df_prog.columns:
-                prod_list = df_prog["product"].dropna().astype(str).str.strip().unique().tolist()
-                products += sorted([p for p in prod_list if p])
-            bar_product = st.selectbox("Filter by Product", products, key="bar_product")
-
-        with col_f4:
-            if not df_prog.empty and "timestamp" in df_prog.columns:
-                dates = pd.to_datetime(df_prog["timestamp"], errors="coerce").dropna()
-                min_d, max_d = (dates.min().date(), dates.max().date()) if not dates.empty else (None, None)
-            else:
-                min_d, max_d = None, None
-            bar_date = st.date_input("Date Range", value=(min_d, max_d) if min_d else None,
-                                    min_value=min_d, max_value=max_d, key="bar_date")
-
-        # 3️⃣ Apply Product & Date Filters for Final Chart
-        if bar_product != "All Products":
-            df_prog = df_prog[df_prog["product"] == bar_product]
-
-        if isinstance(bar_date, tuple) and len(bar_date) == 2:
-            df_prog["temp_date"] = pd.to_datetime(df_prog["timestamp"], errors="coerce").dt.date
-            df_prog = df_prog[(df_prog["temp_date"] >= bar_date[0]) & (df_prog["temp_date"] <= bar_date[1])]
-            df_prog.drop(columns=["temp_date"], inplace=True)
-
-        # ── Render Chart ──
-        if not df_prog.empty:
-            x_axis = "product" if bar_encoder != "All Encoders" and enc_col else (enc_col if enc_col else "product")
-            color_axis = "product" if bar_encoder == "All Encoders" or not enc_col else None
-
-            # Aggregate to prevent duplicate bars
-            group_cols = [x_axis] + ([color_axis] if color_axis else [])
-            chart_df = df_prog.groupby(group_cols)["quantity"].sum().reset_index().rename(columns={"quantity": "total_qty"})
-
-            title = f"Sales Breakdown - {bar_encoder}" if bar_encoder != "All Encoders" else f"Sales Breakdown - {bar_branch}"
-            
-            fig = px.bar(chart_df, x=x_axis, y="total_qty", color=color_axis, barmode="group", 
-                        title=title, height=400, labels={"total_qty": "Total Quantity", "product": "Product"})
-            fig.update_layout(hovermode="x unified", legend=dict(orientation="h", y=1.02, x=1), bargap=0.15)
-            st.plotly_chart(fig, use_container_width=True)
+        if selected_branch == "All Branches":
+            # Get all encoder data only
+            all_frames = []
+            for branch in ENCODER_BRANCHES:
+                df_branch = get_sheet_data(branch)
+                if not df_branch.empty:
+                    df_branch["source_branch"] = branch
+                    all_frames.append(df_branch)
+            df = pd.concat(all_frames, ignore_index=True) if all_frames else pd.DataFrame()
         else:
-            st.info("ℹ️ No data matches the selected filters.")
+            df = get_sheet_data(selected_branch)
 
-        # ✅ TREND CHART SECTION
-        st.divider()
-        st.subheader("📈 Sales Trend by Product")
+        df = normalize_df_columns(df)
 
-        all_products = ["All Products"] + \
-            sorted(df["product"].dropna().unique().tolist())
-        selected_chart_product = st.selectbox(
-            "Filter by Product (Optional)", all_products, key="admin_chart_product")
+        if not df.empty:
+            st.dataframe(df, use_container_width=True)
 
-        chart_df = prepare_trend_data(df, branch_filter=selected_branch)
+            # 📊 DYNAMIC BAR CHART
+            st.divider()
+            st.subheader("📊 Sales Breakdown by Encoder & Product")
 
-        if not chart_df.empty:
-            if selected_chart_product != "All Products":
-                chart_df = chart_df[chart_df["product"]
-                                    == selected_chart_product]
+            df_prog = df.copy()
+            col_f1, col_f2, col_f3, col_f4 = st.columns(4)
 
-            if not chart_df.empty:
-                fig = px.line(
-                    chart_df,
-                    x="date",
-                    y="quantity",
-                    color="product" if selected_chart_product == "All Products" else None,
-                    markers=True,
-                    title=f"Sales Trend - {selected_branch}" if selected_branch != "All Branches" else "Sales Trend - All Branches",
-                    labels={"quantity": "Total Quantity", "date": "Date",
-                            "product": "Product", "branch": "Branch"},
-                    height=400
-                )
-                fig.update_layout(
-                    hovermode="x unified",
-                    legend=dict(orientation="h", yanchor="bottom",
-                                y=1.02, xanchor="right", x=1),
-                    xaxis_title="Date",
-                    yaxis_title="Total Quantity"
-                )
+            with col_f1:
+                branch_options = ["All Branches"] + ENCODER_BRANCHES  # ✅ Only encoder branches
+                bar_branch = st.selectbox("Filter by Branch", branch_options, key="bar_branch")
+
+            if bar_branch != "All Branches" and "source_branch" in df_prog.columns:
+                df_prog = df_prog[df_prog["source_branch"] == bar_branch]
+
+            with col_f2:
+                enc_col = next((c for c in ["enc_name", "encoder", "fullname", "full_name", "name"] if c in df_prog.columns), None)
+                encoders = ["All Encoders"]
+                if enc_col and not df_prog.empty:
+                    enc_list = df_prog[enc_col].dropna().astype(str).str.strip().unique().tolist()
+                    encoders += sorted([e for e in enc_list if e])
+                bar_encoder = st.selectbox("Filter by Encoder", encoders, key="bar_encoder")
+
+            if bar_encoder != "All Encoders" and enc_col:
+                df_prog = df_prog[df_prog[enc_col] == bar_encoder]
+
+            with col_f3:
+                products = ["All Products"]
+                if not df_prog.empty and "product" in df_prog.columns:
+                    prod_list = df_prog["product"].dropna().astype(str).str.strip().unique().tolist()
+                    products += sorted([p for p in prod_list if p])
+                bar_product = st.selectbox("Filter by Product", products, key="bar_product")
+
+            with col_f4:
+                if not df_prog.empty and "timestamp" in df_prog.columns:
+                    dates = pd.to_datetime(df_prog["timestamp"], errors="coerce").dropna()
+                    min_d, max_d = (dates.min().date(), dates.max().date()) if not dates.empty else (None, None)
+                else:
+                    min_d, max_d = None, None
+                bar_date = st.date_input("Date Range", value=(min_d, max_d) if min_d else None,
+                                        min_value=min_d, max_value=max_d, key="bar_date")
+
+            if bar_product != "All Products":
+                df_prog = df_prog[df_prog["product"] == bar_product]
+
+            if isinstance(bar_date, tuple) and len(bar_date) == 2:
+                df_prog["temp_date"] = pd.to_datetime(df_prog["timestamp"], errors="coerce").dt.date
+                df_prog = df_prog[(df_prog["temp_date"] >= bar_date[0]) & (df_prog["temp_date"] <= bar_date[1])]
+                df_prog.drop(columns=["temp_date"], inplace=True)
+
+            if not df_prog.empty:
+                x_axis = "product" if bar_encoder != "All Encoders" and enc_col else (enc_col if enc_col else "product")
+                color_axis = "product" if bar_encoder == "All Encoders" or not enc_col else None
+
+                group_cols = [x_axis] + ([color_axis] if color_axis else [])
+                chart_df = df_prog.groupby(group_cols)["quantity"].sum().reset_index().rename(columns={"quantity": "total_qty"})
+
+                title = f"Sales Breakdown - {bar_encoder}" if bar_encoder != "All Encoders" else f"Sales Breakdown - {bar_branch}"
+                
+                fig = px.bar(chart_df, x=x_axis, y="total_qty", color=color_axis, barmode="group", 
+                            title=title, height=400, labels={"total_qty": "Total Quantity", "product": "Product"})
+                fig.update_layout(hovermode="x unified", legend=dict(orientation="h", y=1.02, x=1), bargap=0.15)
                 st.plotly_chart(fig, use_container_width=True)
             else:
-                st.info("ℹ️ No data for selected product filter.")
-        else:
-            st.info("ℹ️ No trend data available.")
+                st.info("ℹ️ No data matches the selected filters.")
 
-    
+            # 📈 TREND CHART
+            st.divider()
+            st.subheader("📈 Sales Trend by Product")
 
-    st.divider()
-    col1, col2 = st.columns(2)
+            all_products = ["All Products"] + sorted(df["product"].dropna().unique().tolist()) if "product" in df.columns else ["All Products"]
+            selected_chart_product = st.selectbox("Filter by Product (Optional)", all_products, key="admin_chart_product")
 
-    with col1:
-        st.metric("Total Submissions", len(df))
-    with col2:
-        if "timestamp" in df.columns:
-            # ✅ Safely parse the 24-hour timestamp
-            latest = pd.to_datetime(df["timestamp"], errors='coerce').max()
-            
-            if pd.notna(latest):
-                # ✅ Ensure it's treated as Philippine Time
-                if latest.tzinfo is None:
-                    latest = latest.tz_localize('Asia/Manila')
-                
-                # ✅ Display in 12-hour format with AM/PM
-                st.metric("Latest Submission", latest.strftime("%m/%d %I:%M %p"))
+            chart_df = prepare_trend_data(df, branch_filter=selected_branch)
+
+            if not chart_df.empty:
+                if selected_chart_product != "All Products":
+                    chart_df = chart_df[chart_df["product"] == selected_chart_product]
+
+                if not chart_df.empty:
+                    fig = px.line(chart_df, x="date", y="quantity",
+                                color="product" if selected_chart_product == "All Products" else None,
+                                markers=True,
+                                title=f"Sales Trend - {selected_branch}" if selected_branch != "All Branches" else "Sales Trend - All Branches",
+                                labels={"quantity": "Total Quantity", "date": "Date", "product": "Product", "branch": "Branch"},
+                                height=400)
+                    fig.update_layout(hovermode="x unified",
+                                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                                    xaxis_title="Date", yaxis_title="Total Quantity")
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.info("ℹ️ No data for selected product filter.")
+            else:
+                st.info("ℹ️ No trend data available.")
+
+        st.divider()
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("Total Submissions", len(df))
+        with col2:
+            if "timestamp" in df.columns and not df["timestamp"].isna().all():
+                latest = pd.to_datetime(df["timestamp"], errors='coerce').max()
+                if pd.notna(latest):
+                    if latest.tzinfo is None:
+                        latest = latest.tz_localize('Asia/Manila')
+                    st.metric("Latest Submission", latest.strftime("%m/%d %I:%M %p"))
+                else:
+                    st.metric("Latest Submission", "N/A")
             else:
                 st.metric("Latest Submission", "N/A")
+
+    # =============================================================================
+    # TAB 2: MARKET SURVEY DATA
+    # =============================================================================
+    with tab_survey:
+        st.subheader("📋 Market Survey Data")
+        
+        survey_branches = ["All Market Survey Branches"] + MS_BRANCHES
+        selected_survey_branch = st.selectbox("Select Market Survey Branch", survey_branches, key="admin_survey_branch")
+        st.write("\n")
+
+        if selected_survey_branch == "All Market Survey Branches":
+            all_survey_frames = []
+            for branch in MS_BRANCHES:
+                df_survey = get_sheet_data(branch)
+                if not df_survey.empty:
+                    df_survey["source_branch"] = branch
+                    all_survey_frames.append(df_survey)
+            df_survey_all = pd.concat(all_survey_frames, ignore_index=True) if all_survey_frames else pd.DataFrame()
         else:
-            st.metric("Latest Submission", "N/A")
+            df_survey_all = get_sheet_data(selected_survey_branch)
+
+        df_survey_all = normalize_df_columns(df_survey_all)
+
+        if not df_survey_all.empty:
+            st.dataframe(df_survey_all, use_container_width=True)
+            
+            # ✅ Market Survey Analytics
+            st.divider()
+            st.subheader("📊 Market Survey Analytics")
+            
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Total Surveys", len(df_survey_all))
+            with col2:
+                if "distribution" in df_survey_all.columns:
+                    direct_count = len(df_survey_all[df_survey_all["distribution"] == "DIRECT-SERVED"])
+                    st.metric("Direct-Served", direct_count)
+            with col3:
+                if "distribution" in df_survey_all.columns:
+                    sub_count = len(df_survey_all[df_survey_all["distribution"] == "SUB-DEALER"])
+                    st.metric("Sub-Dealer", sub_count)
+            with col4:
+                if "store_name" in df_survey_all.columns:
+                    unique_stores = df_survey_all["store_name"].nunique()
+                    st.metric("Unique Stores", unique_stores)
+            
+            # Distribution Type Chart
+            if "distribution" in df_survey_all.columns:
+                st.divider()
+                st.subheader("📊 Distribution Type Breakdown")
+                dist_counts = df_survey_all["distribution"].value_counts().reset_index()
+                dist_counts.columns = ["Distribution Type", "Count"]
+                
+                fig = px.pie(dist_counts, values="Count", names="Distribution Type", 
+                            title="Distribution Type Distribution",
+                            color_discrete_sequence=px.colors.qualitative.Set2)
+                fig.update_layout(height=400)
+                st.plotly_chart(fig, use_container_width=True)
+            
+            # Store Class Chart
+            if all(col in df_survey_all.columns for col in ["class_a", "class_b", "class_c"]):
+                st.divider()
+                st.subheader("📊 Store Class Distribution")
+                
+                # ✅ FIX: Use pd.to_numeric to handle empty strings safely
+                class_a_count = (pd.to_numeric(df_survey_all["class_a"], errors='coerce').fillna(0).astype(int) > 0).sum()
+                class_b_count = (pd.to_numeric(df_survey_all["class_b"], errors='coerce').fillna(0).astype(int) > 0).sum()
+                class_c_count = (pd.to_numeric(df_survey_all["class_c"], errors='coerce').fillna(0).astype(int) > 0).sum()
+                
+                class_data = {
+                    "Class": ["Class A (501+)", "Class B (101-500)", "Class C (≤100)"],
+                    "Count": [class_a_count, class_b_count, class_c_count]
+                }
+                class_df = pd.DataFrame(class_data)
+                
+                fig = px.bar(class_df, x="Class", y="Count", 
+                            title="Number of Stores by Class",
+                            color="Class",
+                            color_discrete_sequence=px.colors.qualitative.Pastel)
+                fig.update_layout(height=400, showlegend=False)
+                st.plotly_chart(fig, use_container_width=True)
+            
+            # Top Feeds Brands
+            feed_cols = [col for col in df_survey_all.columns if col.startswith("feeds_hogs_50_kg_")]
+            if feed_cols:
+                st.divider()
+                st.subheader("🌾 Top Hog Feeds Brands (50kg)")
+                
+                brand_totals = {}
+                for col in feed_cols:
+                    brand_name = col.replace("feeds_hogs_50_kg_", "").replace("_", " ").title()
+                    total = pd.to_numeric(df_survey_all[col], errors="coerce").sum()
+                    if total > 0:
+                        brand_totals[brand_name] = total
+                
+                if brand_totals:
+                    brand_df = pd.DataFrame(list(brand_totals.items()), columns=["Brand", "Total Bags"])
+                    brand_df = brand_df.sort_values("Total Bags", ascending=False).head(10)
+                    
+                    fig = px.bar(brand_df, x="Brand", y="Total Bags", 
+                                title="Top 10 Hog Feeds Brands by Total Bags Sold",
+                                color="Total Bags",
+                                color_continuous_scale="Blues")
+                    fig.update_layout(height=400, xaxis_tickangle=-45)
+                    st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("ℹ️ No market survey data available.")
+        
+        st.divider()
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("Total Surveys", len(df_survey_all))
+        with col2:
+            if "timestamp" in df_survey_all.columns and not df_survey_all["timestamp"].isna().all():
+                latest = pd.to_datetime(df_survey_all["timestamp"], errors='coerce').max()
+                if pd.notna(latest):
+                    if latest.tzinfo is None:
+                        latest = latest.tz_localize('Asia/Manila')
+                    st.metric("Latest Survey", latest.strftime("%m/%d %I:%M %p"))
+                else:
+                    st.metric("Latest Survey", "N/A")
+            else:
+                st.metric("Latest Survey", "N/A")
+
 
 def render_moderator_view(user):
     with st.container(horizontal=True, horizontal_alignment="distribute"):
@@ -220,139 +327,341 @@ def render_moderator_view(user):
             get_all_sheets_data.clear()
             st.rerun()
 
-    st.divider()
-    st.subheader("📝 All Transactions")
-    st.caption("Complete transaction history")
+    # ✅ Check if moderator is for encoder branch or market survey branch
+    is_ms_branch = user["branch"] in MS_BRANCHES
+    
+    # Create appropriate tabs
+    if is_ms_branch:
+        tab_survey = st.tabs(["📋 Market Survey Data"])[0]
+        
+        with tab_survey:
+            st.divider()
+            st.subheader("📝 All Market Surveys")
+            st.caption("Complete market survey history")
 
-    df = get_sheet_data(user["branch"])
-    df = normalize_df_columns(df)  # ✅ Normalize columns
-    df_display = df.drop(columns=["username"], errors="ignore")
+            df = get_sheet_data(user["branch"])
+            df = normalize_df_columns(df)
+            df_display = df.drop(columns=["username"], errors="ignore")
 
-    if not df.empty:
-        st.dataframe(df_display, use_container_width=True)
-        # =============================================================================
-        # 📊 MODERATOR: DYNAMIC SALES BREAKDOWN (Branch-Locked)
-        # =============================================================================
-        st.divider()
-        st.subheader(f"📊 {user['branch']} Sales Breakdown")
-
-        # df is already locked to user["branch"]
-        df_prog = df.copy()
-        col_f1, col_f2, col_f3 = st.columns(3)
-
-        with col_f1:
-            enc_col = next((c for c in ["enc_name", "encoder", "fullname", "full_name", "name"] if c in df_prog.columns), None)
-            encoders = ["All Encoders"]
-            if enc_col and not df_prog.empty:
-                enc_list = df_prog[enc_col].dropna().astype(str).str.strip().unique().tolist()
-                encoders += sorted([e for e in enc_list if e])
-            bar_encoder = st.selectbox("Filter by Encoder", encoders, key=f"mod_bar_enc_{user['branch']}")
-
-        # Apply encoder filter before populating products
-        if bar_encoder != "All Encoders" and enc_col:
-            df_prog = df_prog[df_prog[enc_col] == bar_encoder]
-
-        with col_f2:
-            products = ["All Products"]
-            if not df_prog.empty and "product" in df_prog.columns:
-                prod_list = df_prog["product"].dropna().astype(str).str.strip().unique().tolist()
-                products += sorted([p for p in prod_list if p])
-            bar_product = st.selectbox("Filter by Product", products, key=f"mod_bar_prod_{user['branch']}")
-
-        with col_f3:
-            if not df_prog.empty and "timestamp" in df_prog.columns:
-                dates = pd.to_datetime(df_prog["timestamp"], errors="coerce").dropna()
-                min_d, max_d = (dates.min().date(), dates.max().date()) if not dates.empty else (None, None)
-            else:
-                min_d, max_d = None, None
-            bar_date = st.date_input("Date Range", value=(min_d, max_d) if min_d else None,
-                                    min_value=min_d, max_value=max_d, key=f"mod_bar_date_{user['branch']}")
-
-        # Apply product & date filters
-        if bar_product != "All Products":
-            df_prog = df_prog[df_prog["product"] == bar_product]
-        if isinstance(bar_date, tuple) and len(bar_date) == 2:
-            df_prog["temp_date"] = pd.to_datetime(df_prog["timestamp"], errors="coerce").dt.date
-            df_prog = df_prog[(df_prog["temp_date"] >= bar_date[0]) & (df_prog["temp_date"] <= bar_date[1])]
-            df_prog.drop(columns=["temp_date"], inplace=True)
-
-        # Render
-        if not df_prog.empty:
-            x_axis = "product" if bar_encoder != "All Encoders" and enc_col else (enc_col if enc_col else "product")
-            color_axis = "product" if bar_encoder == "All Encoders" or not enc_col else None
-            group_cols = [x_axis] + ([color_axis] if color_axis else [])
-            chart_df = df_prog.groupby(group_cols)["quantity"].sum().reset_index().rename(columns={"quantity": "total_qty"})
-            
-            title = f"Sales Breakdown - {bar_encoder}" if bar_encoder != "All Encoders" else f"Sales Breakdown - {user['branch']}"
-            fig = px.bar(chart_df, x=x_axis, y="total_qty", color=color_axis, barmode="group", 
-                        title=title, height=400, labels={"total_qty": "Total Quantity"})
-            fig.update_layout(hovermode="x unified", legend=dict(orientation="h", y=1.02, x=1))
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("ℹ️ No data matches the selected filters.")
-
-        # ✅ TREND CHART SECTION
-        st.divider()
-        st.subheader(f"📈 {user['branch']} Sales Trend by Product")
-
-        all_products = ["All Products"] + \
-            sorted(df["product"].dropna().unique().tolist())
-        selected_chart_product = st.selectbox(
-            "Filter by Product (Optional)", all_products, key=f"mod_chart_product_{user['branch']}")
-
-        chart_df = prepare_trend_data(df, branch_filter=user["branch"])
-
-        if not chart_df.empty:
-            if selected_chart_product != "All Products":
-                chart_df = chart_df[chart_df["product"]
-                                    == selected_chart_product]
-
-            if not chart_df.empty:
-                fig = px.line(
-                    chart_df,
-                    x="date",
-                    y="quantity",
-                    color="product",
-                    markers=True,
-                    title=f"{user['branch']} - Sales Trend",
-                    labels={"quantity": "Total Quantity",
-                            "date": "Date", "product": "Product"},
-                    height=400
-                )
-                fig.update_layout(
-                    hovermode="x unified",
-                    legend=dict(orientation="h", yanchor="bottom",
-                                y=1.02, xanchor="right", x=1)
-                )
-                st.plotly_chart(fig, use_container_width=True)
-            else:
-                st.info("ℹ️ No data for selected product filter.")
-        else:
-            st.info("ℹ️ No trend data available.")
-    else:
-        st.info("ℹ️ No records yet.")
-
-    st.divider()
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.metric("Total Submissions", len(df))
-    with col2:
-        if "timestamp" in df.columns:
-            # ✅ Safely parse the 24-hour timestamp
-            latest = pd.to_datetime(df["timestamp"], errors='coerce').max()
-            
-            if pd.notna(latest):
-                # ✅ Ensure it's treated as Philippine Time
-                if latest.tzinfo is None:
-                    latest = latest.tz_localize('Asia/Manila')
+            if not df.empty:
+                st.dataframe(df_display, use_container_width=True)
                 
-                # ✅ Display in 12-hour format with AM/PM
-                st.metric("Latest Submission", latest.strftime("%m/%d %I:%M %p"))
+                # ✅ Market Survey Analytics for Moderator
+                st.divider()
+                st.subheader(f"📊 {user['branch']} Market Survey Analytics")
+                
+                col1, col2, col3, col4 = st.columns(4)
+                with col1:
+                    st.metric("Total Surveys", len(df))
+                with col2:
+                    if "distribution" in df.columns:
+                        direct_count = len(df[df["distribution"] == "DIRECT-SERVED"])
+                        st.metric("Direct-Served", direct_count)
+                with col3:
+                    if "distribution" in df.columns:
+                        sub_count = len(df[df["distribution"] == "SUB-DEALER"])
+                        st.metric("Sub-Dealer", sub_count)
+                with col4:
+                    if "store_name" in df.columns:
+                        unique_stores = df["store_name"].nunique()
+                        st.metric("Unique Stores", unique_stores)
+                
+                # Distribution Type Chart
+                if "distribution" in df.columns:
+                    st.divider()
+                    st.subheader("📊 Distribution Type Breakdown")
+                    dist_counts = df["distribution"].value_counts().reset_index()
+                    dist_counts.columns = ["Distribution Type", "Count"]
+                    
+                    fig = px.pie(dist_counts, values="Count", names="Distribution Type", 
+                                title=f"{user['branch']} - Distribution Type",
+                                color_discrete_sequence=px.colors.qualitative.Set2)
+                    fig.update_layout(height=400)
+                    st.plotly_chart(fig, use_container_width=True)
+                
+                # Store Class Chart
+                if all(col in df.columns for col in ["class_a", "class_b", "class_c"]):
+                    st.divider()
+                    st.subheader("📊 Store Class Distribution")
+                    
+                    # ✅ FIX: Use pd.to_numeric to handle empty strings safely
+                    class_a_count = (pd.to_numeric(df["class_a"], errors='coerce').fillna(0).astype(int) > 0).sum()
+                    class_b_count = (pd.to_numeric(df["class_b"], errors='coerce').fillna(0).astype(int) > 0).sum()
+                    class_c_count = (pd.to_numeric(df["class_c"], errors='coerce').fillna(0).astype(int) > 0).sum()
+                    
+                    class_data = {
+                        "Class": ["Class A (501+)", "Class B (101-500)", "Class C (≤100)"],
+                        "Count": [class_a_count, class_b_count, class_c_count]
+                    }
+                    class_df = pd.DataFrame(class_data)
+                    
+                    fig = px.bar(class_df, x="Class", y="Count", 
+                                title=f"{user['branch']} - Store Classes",
+                                color="Class",
+                                color_discrete_sequence=px.colors.qualitative.Pastel)
+                    fig.update_layout(height=400, showlegend=False)
+                    st.plotly_chart(fig, use_container_width=True)
+                
+                # Top Feeds Brands
+                feed_cols = [col for col in df.columns if col.startswith("feeds_hogs_50_kg_")]
+                if feed_cols:
+                    st.divider()
+                    st.subheader("🌾 Top Hog Feeds Brands (50kg)")
+                    
+                    brand_totals = {}
+                    for col in feed_cols:
+                        brand_name = col.replace("feeds_hogs_50_kg_", "").replace("_", " ").title()
+                        total = pd.to_numeric(df[col], errors="coerce").sum()
+                        if total > 0:
+                            brand_totals[brand_name] = total
+                    
+                    if brand_totals:
+                        brand_df = pd.DataFrame(list(brand_totals.items()), columns=["Brand", "Total Bags"])
+                        brand_df = brand_df.sort_values("Total Bags", ascending=False).head(10)
+                        
+                        fig = px.bar(brand_df, x="Brand", y="Total Bags", 
+                                    title=f"{user['branch']} - Top 10 Hog Feeds Brands",
+                                    color="Total Bags",
+                                    color_continuous_scale="Blues")
+                        fig.update_layout(height=400, xaxis_tickangle=-45)
+                        st.plotly_chart(fig, use_container_width=True)
             else:
-                st.metric("Latest Submission", "N/A")
-        else:
-            st.metric("Latest Submission", "N/A")
+                st.info("ℹ️ No market survey records yet.")
+
+            st.divider()
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Total Surveys", len(df))
+            with col2:
+                if "timestamp" in df.columns and not df["timestamp"].isna().all():
+                    latest = pd.to_datetime(df["timestamp"], errors='coerce').max()
+                    if pd.notna(latest):
+                        if latest.tzinfo is None:
+                            latest = latest.tz_localize('Asia/Manila')
+                        st.metric("Latest Survey", latest.strftime("%m/%d %I:%M %p"))
+                    else:
+                        st.metric("Latest Survey", "N/A")
+                else:
+                    st.metric("Latest Survey", "N/A")
+    else:
+        # Encoder branch moderator
+        tab_encoder, tab_survey = st.tabs(["📊 Encoder SMAHC Pullout", "📋 Market Survey Data"])
+        
+        with tab_encoder:
+            st.divider()
+            st.subheader("📝 All Transactions")
+            st.caption("Complete transaction history")
+
+            df = get_sheet_data(user["branch"])
+            df = normalize_df_columns(df)
+            df_display = df.drop(columns=["username"], errors="ignore")
+
+            if not df.empty:
+                st.dataframe(df_display, use_container_width=True)
+                
+                # 📊 MODERATOR: DYNAMIC SALES BREAKDOWN
+                st.divider()
+                st.subheader(f"📊 {user['branch']} Sales Breakdown")
+
+                df_prog = df.copy()
+                col_f1, col_f2, col_f3 = st.columns(3)
+
+                with col_f1:
+                    enc_col = next((c for c in ["enc_name", "encoder", "fullname", "full_name", "name"] if c in df_prog.columns), None)
+                    encoders = ["All Encoders"]
+                    if enc_col and not df_prog.empty:
+                        enc_list = df_prog[enc_col].dropna().astype(str).str.strip().unique().tolist()
+                        encoders += sorted([e for e in enc_list if e])
+                    bar_encoder = st.selectbox("Filter by Encoder", encoders, key=f"mod_bar_enc_{user['branch']}")
+
+                if bar_encoder != "All Encoders" and enc_col:
+                    df_prog = df_prog[df_prog[enc_col] == bar_encoder]
+
+                with col_f2:
+                    products = ["All Products"]
+                    if not df_prog.empty and "product" in df_prog.columns:
+                        prod_list = df_prog["product"].dropna().astype(str).str.strip().unique().tolist()
+                        products += sorted([p for p in prod_list if p])
+                    bar_product = st.selectbox("Filter by Product", products, key=f"mod_bar_prod_{user['branch']}")
+
+                with col_f3:
+                    if not df_prog.empty and "timestamp" in df_prog.columns:
+                        dates = pd.to_datetime(df_prog["timestamp"], errors="coerce").dropna()
+                        min_d, max_d = (dates.min().date(), dates.max().date()) if not dates.empty else (None, None)
+                    else:
+                        min_d, max_d = None, None
+                    bar_date = st.date_input("Date Range", value=(min_d, max_d) if min_d else None,
+                                            min_value=min_d, max_value=max_d, key=f"mod_bar_date_{user['branch']}")
+
+                if bar_product != "All Products":
+                    df_prog = df_prog[df_prog["product"] == bar_product]
+                if isinstance(bar_date, tuple) and len(bar_date) == 2:
+                    df_prog["temp_date"] = pd.to_datetime(df_prog["timestamp"], errors="coerce").dt.date
+                    df_prog = df_prog[(df_prog["temp_date"] >= bar_date[0]) & (df_prog["temp_date"] <= bar_date[1])]
+                    df_prog.drop(columns=["temp_date"], inplace=True)
+
+                if not df_prog.empty:
+                    x_axis = "product" if bar_encoder != "All Encoders" and enc_col else (enc_col if enc_col else "product")
+                    color_axis = "product" if bar_encoder == "All Encoders" or not enc_col else None
+                    group_cols = [x_axis] + ([color_axis] if color_axis else [])
+                    chart_df = df_prog.groupby(group_cols)["quantity"].sum().reset_index().rename(columns={"quantity": "total_qty"})
+                    
+                    title = f"Sales Breakdown - {bar_encoder}" if bar_encoder != "All Encoders" else f"Sales Breakdown - {user['branch']}"
+                    fig = px.bar(chart_df, x=x_axis, y="total_qty", color=color_axis, barmode="group", 
+                                title=title, height=400, labels={"total_qty": "Total Quantity"})
+                    fig.update_layout(hovermode="x unified", legend=dict(orientation="h", y=1.02, x=1))
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.info("ℹ️ No data matches the selected filters.")
+
+                # 📈 TREND CHART
+                st.divider()
+                st.subheader(f"📈 {user['branch']} Sales Trend by Product")
+
+                all_products = ["All Products"] + sorted(df["product"].dropna().unique().tolist()) if "product" in df.columns else ["All Products"]
+                selected_chart_product = st.selectbox("Filter by Product (Optional)", all_products, key=f"mod_chart_product_{user['branch']}")
+
+                chart_df = prepare_trend_data(df, branch_filter=user["branch"])
+
+                if not chart_df.empty:
+                    if selected_chart_product != "All Products":
+                        chart_df = chart_df[chart_df["product"] == selected_chart_product]
+
+                    if not chart_df.empty:
+                        fig = px.line(chart_df, x="date", y="quantity", color="product", markers=True,
+                                    title=f"{user['branch']} - Sales Trend",
+                                    labels={"quantity": "Total Quantity", "date": "Date", "product": "Product"},
+                                    height=400)
+                        fig.update_layout(hovermode="x unified",
+                                        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
+                        st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        st.info("ℹ️ No data for selected product filter.")
+                else:
+                    st.info("ℹ️ No trend data available.")
+            else:
+                st.info("ℹ️ No records yet.")
+
+            st.divider()
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Total Submissions", len(df))
+            with col2:
+                if "timestamp" in df.columns and not df["timestamp"].isna().all():
+                    latest = pd.to_datetime(df["timestamp"], errors='coerce').max()
+                    if pd.notna(latest):
+                        if latest.tzinfo is None:
+                            latest = latest.tz_localize('Asia/Manila')
+                        st.metric("Latest Submission", latest.strftime("%m/%d %I:%M %p"))
+                    else:
+                        st.metric("Latest Submission", "N/A")
+                else:
+                    st.metric("Latest Submission", "N/A")
+        
+        with tab_survey:
+            st.subheader("📋 Market Survey Data")
+            st.caption(f"Viewing market survey data for {user['branch']}")
+            
+            # Map encoder branch to corresponding MS branch
+            ms_branch_map = {
+                "TWMC LEYTE": "LEYTE MS",
+                "TWMC SAMAR": "SAMAR MS",
+                "TWMC CALBAYOG": "CALBAYOG MS",
+                "TWMC SOUTHERN LEYTE": "SOUTHERN LEYTE MS"
+            }
+            
+            ms_branch = ms_branch_map.get(user["branch"])
+            
+            if ms_branch:
+                df_survey = get_sheet_data(ms_branch)
+                df_survey = normalize_df_columns(df_survey)
+                
+                if not df_survey.empty:
+                    st.dataframe(df_survey, use_container_width=True)
+                    
+                    # Analytics
+                    st.divider()
+                    st.subheader(f"📊 {ms_branch} Market Survey Analytics")
+                    
+                    col1, col2, col3, col4 = st.columns(4)
+                    with col1:
+                        st.metric("Total Surveys", len(df_survey))
+                    with col2:
+                        if "distribution" in df_survey.columns:
+                            direct_count = len(df_survey[df_survey["distribution"] == "DIRECT-SERVED"])
+                            st.metric("Direct-Served", direct_count)
+                    with col3:
+                        if "distribution" in df_survey.columns:
+                            sub_count = len(df_survey[df_survey["distribution"] == "SUB-DEALER"])
+                            st.metric("Sub-Dealer", sub_count)
+                    with col4:
+                        if "store_name" in df_survey.columns:
+                            unique_stores = df_survey["store_name"].nunique()
+                            st.metric("Unique Stores", unique_stores)
+                    
+                    # Distribution Chart
+                    if "distribution" in df_survey.columns:
+                        st.divider()
+                        st.subheader("📊 Distribution Type Breakdown")
+                        dist_counts = df_survey["distribution"].value_counts().reset_index()
+                        dist_counts.columns = ["Distribution Type", "Count"]
+                        
+                        fig = px.pie(dist_counts, values="Count", names="Distribution Type", 
+                                    title=f"{ms_branch} - Distribution Type",
+                                    color_discrete_sequence=px.colors.qualitative.Set2)
+                        fig.update_layout(height=400)
+                        st.plotly_chart(fig, use_container_width=True)
+                    
+                    # Store Class Chart
+                    if all(col in df_survey.columns for col in ["class_a", "class_b", "class_c"]):
+                        st.divider()
+                        st.subheader("📊 Store Class Distribution")
+                        
+                        class_a_count = (pd.to_numeric(df_survey["class_a"], errors='coerce').fillna(0).astype(int) > 0).sum()
+                        class_b_count = (pd.to_numeric(df_survey["class_b"], errors='coerce').fillna(0).astype(int) > 0).sum()
+                        class_c_count = (pd.to_numeric(df_survey["class_c"], errors='coerce').fillna(0).astype(int) > 0).sum()
+                        
+                        class_data = {
+                            "Class": ["Class A (501+)", "Class B (101-500)", "Class C (≤100)"],
+                            "Count": [class_a_count, class_b_count, class_c_count]
+                        }
+                        class_df = pd.DataFrame(class_data)
+                        
+                        fig = px.bar(class_df, x="Class", y="Count", 
+                                    title=f"{ms_branch} - Store Classes",
+                                    color="Class",
+                                    color_discrete_sequence=px.colors.qualitative.Pastel)
+                        fig.update_layout(height=400, showlegend=False)
+                        st.plotly_chart(fig, use_container_width=True)
+                    
+                    # Top Feeds Brands
+                    feed_cols = [col for col in df_survey.columns if col.startswith("feeds_hogs_50_kg_")]
+                    if feed_cols:
+                        st.divider()
+                        st.subheader("🌾 Top Hog Feeds Brands (50kg)")
+                        
+                        brand_totals = {}
+                        for col in feed_cols:
+                            brand_name = col.replace("feeds_hogs_50_kg_", "").replace("_", " ").title()
+                            total = pd.to_numeric(df_survey[col], errors="coerce").sum()
+                            if total > 0:
+                                brand_totals[brand_name] = total
+                        
+                        if brand_totals:
+                            brand_df = pd.DataFrame(list(brand_totals.items()), columns=["Brand", "Total Bags"])
+                            brand_df = brand_df.sort_values("Total Bags", ascending=False).head(10)
+                            
+                            fig = px.bar(brand_df, x="Brand", y="Total Bags", 
+                                        title=f"{ms_branch} - Top 10 Hog Feeds Brands",
+                                        color="Total Bags",
+                                        color_continuous_scale="Blues")
+                            fig.update_layout(height=400, xaxis_tickangle=-45)
+                            st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.info("ℹ️ No market survey data available for this branch.")
+            else:
+                st.warning("⚠️ No corresponding market survey branch found.")
+
 
 def get_encode_list(branch: str, team: str = None) -> list[str]:
     BRANCH_ENCODER_MAP = {
@@ -370,7 +679,6 @@ def get_encode_list(branch: str, team: str = None) -> list[str]:
 
     if isinstance(source, dict):
         if team:
-
             team_key = next((k for k, v in USERS.items()
                 if v.get("branch") == branch and v.get("team") == team), None)
             if team_key and team_key in source:
@@ -381,10 +689,9 @@ def get_encode_list(branch: str, team: str = None) -> list[str]:
                     names.update(val if isinstance(val, (set, list)) else {val})
 
     elif isinstance(source, list):
-        names.update(n for n in source if n and not n.startwith("--"))
+        names.update(n for n in source if n and not n.startswith("--"))
 
     return ["-- Full Name --"] + sorted(names) if names else ["-- Full Name --"]
-
 
 
 def render_encoder_view(user):
@@ -395,54 +702,39 @@ def render_encoder_view(user):
             get_all_sheets_data.clear()
             st.rerun()
 
-    # Branch selection logic
     if user["branch"]:
         selected_branch = user["branch"]
         st.info(f"🔒 Assigned to: {selected_branch}")
     else:
-        selected_branch = st.selectbox(
-            "Select Target Branch", list(BRANCH_SHEETS.keys()))
+        selected_branch = st.selectbox("Select Target Branch", list(BRANCH_SHEETS.keys()))
 
-    # ✅ Reset form logic - MUST happen BEFORE widgets are rendered
     if st.session_state.get("reset_encoder_form", False):
-        # Reset to proper default values
         st.session_state.enc_name = "-- Full Name --"
         st.session_state.store_name = "-- Select Customer --"
         st.session_state.product = "-- Select Product --"
         st.session_state.uom = "-- Select Unit --"
-        st.session_state.qty = 0  # Use 0 instead of None
+        st.session_state.qty = 0
         st.session_state.notes = ""
         st.session_state.reset_encoder_form = False
-        # Don't rerun here - let the widgets render with new values
 
     with st.expander("📝 Add Data Here"):
-        # ✅ Initialize session state defaults - only if not already set
-        if "enc_name" not in st.session_state:
-            st.session_state.enc_name = "-- Full Name --"
-        if "store_name" not in st.session_state:
-            st.session_state.store_name = "-- Select Customer --"
-        if "product" not in st.session_state:
-            st.session_state.product = "-- Select Product --"
-        if "uom" not in st.session_state:
-            st.session_state.uom = "-- Select Unit --"
-        if "qty" not in st.session_state:
-            st.session_state.qty = 0
-        if "notes" not in st.session_state:
-            st.session_state.notes = ""
+        defaults = {
+            "enc_name": "-- Full Name --", "store_name": "-- Select Customer --",
+            "product": "-- Select Product --", "uom": "-- Select Unit --",
+            "qty": 0, "notes": ""
+        }
+        for key, default in defaults.items():
+            if key not in st.session_state:
+                st.session_state[key] = default
 
         st.markdown("""
         <style>
         .stTextInput input { text-transform: uppercase; }
         </style>""", unsafe_allow_html=True)
 
-    
         emp_list = get_encode_list(user["branch"], user.get("team"))
         st.selectbox("Full Name", emp_list, key="enc_name")
 
-        # st.text_input("Enter Your Full Name*",
-        #               key="enc_name", placeholder="Fullname")
-
-        # Customer dropdown based on branch
         customer_list = {
             "TWMC LEYTE": LEYTE_CUSTOMERS,
             "TWMC SAMAR": SAMAR_CUSTOMERS,
@@ -452,25 +744,20 @@ def render_encoder_view(user):
 
         st.selectbox("Enter Store Name", customer_list, key="store_name")
 
-        # Product selection
         product_options = ["-- Select Product --"] + list(PRODUCT_LIST.keys())
         st.selectbox("Product", product_options, key="product")
 
-        # Dynamic UOM based on product
         selected_product = st.session_state.product
         if selected_product in ("-- Select Product --", "-- OTHERS --") or not PRODUCT_LIST.get(selected_product):
             uom_options = ["-- Select Unit --"]
         else:
-            uom_options = ["-- Select Unit --"] + \
-                sorted(PRODUCT_LIST[selected_product])
+            uom_options = ["-- Select Unit --"] + sorted(PRODUCT_LIST[selected_product])
         st.selectbox("UOM", uom_options, key="uom")
 
         st.number_input("Quantity", min_value=0, step=1, key="qty")
         st.text_area("Notes", key="notes")
 
-        # Submit button
         if st.button("Submit Data"):
-            # Validation
             errors = []
             if st.session_state.enc_name == "-- Full Name --":
                 errors.append("Please enter your name")
@@ -491,7 +778,7 @@ def render_encoder_view(user):
                     "timestamp": datetime.now(PHT).strftime("%Y-%m-%d %H:%M:%S"),
                     "username": user["username"],
                     "role_team": f"Encoder - {user.get('team', 'General')}",
-                    "name": st.session_state.enc_name.strip().upper(),  # ✅ Changed from "enc_name" to "name"
+                    "name": st.session_state.enc_name.strip().upper(),
                     "store_name": st.session_state.store_name,
                     "product": st.session_state.product,
                     "quantity": int(st.session_state.qty),
@@ -505,7 +792,6 @@ def render_encoder_view(user):
                 if success:
                     st.success("✅ Data successfully saved!")
                     st.session_state.reset_encoder_form = True
-                    # Remove the st.rerun() here - let the reset logic handle it on next render
                     st.rerun()
                 else:
                     st.error("❌ Failed to save data. Please try again.")
@@ -528,16 +814,11 @@ def render_encoder_view(user):
     with col1:
         st.metric("Total Submissions", len(df))
     with col2:
-        if "timestamp" in df.columns:
-            # ✅ Safely parse the 24-hour timestamp
+        if "timestamp" in df.columns and not df["timestamp"].isna().all():
             latest = pd.to_datetime(df["timestamp"], errors='coerce').max()
-            
             if pd.notna(latest):
-                # ✅ Ensure it's treated as Philippine Time
                 if latest.tzinfo is None:
                     latest = latest.tz_localize('Asia/Manila')
-                
-                # ✅ Display in 12-hour format with AM/PM
                 st.metric("Latest Submission", latest.strftime("%m/%d %I:%M %p"))
             else:
                 st.metric("Latest Submission", "N/A")
@@ -550,25 +831,20 @@ def prepare_trend_data(df: pd.DataFrame, branch_filter: str = None) -> pd.DataFr
     if df.empty:
         return pd.DataFrame()
 
-    # ✅ Ensure lowercase columns
     df = df.copy()
     df.columns = df.columns.str.lower().str.strip().str.replace(" ", "_")
 
-    # Verify required columns
     required = ["timestamp", "product", "quantity"]
     if not all(col in df.columns for col in required):
         return pd.DataFrame()
 
-    # Filter by branch if specified
     if branch_filter and branch_filter != "All Branches":
         if "source_branch" in df.columns:
             df = df[df["source_branch"] == branch_filter]
 
-    # Convert timestamp to date
     df["date"] = pd.to_datetime(df["timestamp"], errors="coerce").dt.date
     df = df.dropna(subset=["date", "product", "quantity"])
 
-    # Aggregate by date + product (+ branch if showing all)
     group_cols = ["date", "product"]
     if "source_branch" in df.columns and branch_filter == "All Branches":
         group_cols.append("source_branch")
@@ -586,7 +862,6 @@ def prepare_bar_chart_data(df: pd.DataFrame, branch_filter: str = None,
     df = df.copy()
     df.columns = df.columns.str.lower().str.strip().str.replace(" ", "_")
     
-    # 🔍 Find encoder column dynamically
     enc_col = None
     for col in ["enc_name", "encoder", "encoder_name", "fullname"]:
         if col in df.columns:
@@ -598,28 +873,22 @@ def prepare_bar_chart_data(df: pd.DataFrame, branch_filter: str = None,
         required.append(enc_col)
         
     if not all(col in df.columns for col in required):
-        # Return data even without encoder column
         if not all(col in df.columns for col in ["timestamp", "product", "quantity"]):
             return pd.DataFrame()
     
-    # Filter by branch
     if branch_filter and branch_filter != "All Branches" and "source_branch" in df.columns:
         df = df[df["source_branch"] == branch_filter]
     
-    # 🔧 Filter by encoder (use dynamic column name)
     if encoder_filter and encoder_filter != "All Encoders" and enc_col:
         df = df[df[enc_col] == encoder_filter]
     
-    # Filter by product
     if product_filter and product_filter != "All Products":
         df = df[df["product"] == product_filter]
     
-    # Filter by date range
     if date_range and date_range[0] and date_range[1]:
         df["date_only"] = pd.to_datetime(df["timestamp"], errors="coerce").dt.date
         df = df[(df["date_only"] >= date_range[0]) & (df["date_only"] <= date_range[1])]
     
-    # Aggregate - use dynamic encoder column
     group_cols = [enc_col, "product"] if enc_col else ["product"]
     if "source_branch" in df.columns and branch_filter == "All Branches":
         group_cols.append("source_branch")
@@ -633,16 +902,15 @@ def render_market_survey_view(user):
     st.header("📋 Market Survey Form")
     st.caption(f"Encoder: `{user['username']}` | Branch: `{user.get('branch', 'N/A')}` | Team: `{user.get('team', 'N/A')}`")
 
-    # ✅ Initialize ALL session state keys ONCE
     if "ms_initialized" not in st.session_state:
         st.session_state.ms_initialized = True
+        st.session_state.ms_save_success = False
         
-        # 1. Basic Fields
         st.session_state.ms_store_name = ""
         st.session_state.ms_owner_name = ""
         st.session_state.ms_street = ""
         st.session_state.ms_barangay = ""
-        st.session_state.ms_city = ""  # ✅ NEW: City field
+        st.session_state.ms_city = ""
         st.session_state.ms_province = ""
         st.session_state.ms_contact = ""
         st.session_state.ms_bday = date.today()
@@ -652,7 +920,6 @@ def render_market_survey_view(user):
         st.session_state.ms_dist_type = "DIRECT-SERVED"
         st.session_state.ms_direct_dealers = []
         
-        # 2. Initialize Feed/Pet/Vet Keys
         HOGS = ["ULTRAPAK", "PILMICO", "PIGROLAC", "UNIFEEDS", "CJ", "UNO", "PROMIX", "FEED EXPRESS", "VIEPRO", "VAST", "SUNJIN", "KARGADO", "HARVESTA", "NEW HOPE", "OTHERS"]
         GF_50 = ["GALLIMAX", "GMP", "INFINITY", "FIREBIRD", "PRO-BOOST", "AVES", "GF", "OTHERS"]
         LAYER = ["LAYEX", "PILMICO EXPRESS", "SARIMANOK", "UNIFEEDS", "UNO", "SUNJIN", "LAYENA", "GREENHILLS", "OTHERS"]
@@ -681,9 +948,6 @@ def render_market_survey_view(user):
 
     tab1, tab2, tab3, tab4, tab5 = st.tabs(["🏪 Store Info", "🌾 Feeds", "🐾 Petfood", "💊 Vetmed", "✅ Review & Submit"])
 
-    # =============================================================================
-    # TAB 1: STORE INFORMATION
-    # =============================================================================
     with tab1:
         st.subheader("🏪 Store Details")
         col1, col2 = st.columns(2)
@@ -692,7 +956,7 @@ def render_market_survey_view(user):
             st.text_input("Owner's Name", key="ms_owner_name", placeholder="e.g., JUAN DELA CRUZ")
             st.text_input("Street", key="ms_street", placeholder="Street / Purok / Zone")
             st.text_input("Barangay", key="ms_barangay", placeholder="Barangay")
-            st.text_input("City", key="ms_city", placeholder="City")  # ✅ NEW: City field
+            st.text_input("City", key="ms_city", placeholder="City")
             st.text_input("Province", key="ms_province", placeholder="Province")
             
         with col2:
@@ -707,9 +971,6 @@ def render_market_survey_view(user):
 
         st.selectbox("Distribution Type", ["DIRECT-SERVED", "SUB-DEALER"], key="ms_dist_type")
     
-    # =============================================================================
-    # SUB-DEALERS SECTION
-    # =============================================================================
     if st.session_state.ms_dist_type == "DIRECT-SERVED":
         with tab1:
             st.divider()
@@ -744,9 +1005,6 @@ def render_market_survey_view(user):
                             st.session_state.ms_direct_dealers.pop(i)
                             st.rerun()
 
-    # =============================================================================
-    # TAB 2: FEEDS SURVEY
-    # =============================================================================
     with tab2:
         st.subheader("🌾 Feeds Survey")
         st.caption("Enter number of bags sold per month")
@@ -766,9 +1024,6 @@ def render_market_survey_view(user):
         feed_section("GAMEFOWL (1X24 pack)", "gamefowl_ix24_pack", ["THUNDERBIRD", "SALTO", "SAGUPAAN", "WARHAWK", "OTHERS"], 5)
         feed_section("BROILER (50 kg)", "broiler_50_kg", ["PILMICO", "GREENHILLS", "GMC", "UNIFEEDS", "OTHERS"], 5)
 
-    # =============================================================================
-    # TAB 3: PETFOOD SURVEY
-    # =============================================================================
     with tab3:
         st.subheader("🐾 Petfood Survey")
         st.caption("Enter number of units sold per month")
@@ -792,9 +1047,6 @@ def render_market_survey_view(user):
                 key = f"ms_pet_cat_{brand.replace(' ', '_')}"
                 st.number_input(brand, min_value=0, step=1, key=key)
 
-    # =============================================================================
-    # TAB 4: VETMED SURVEY
-    # =============================================================================
     with tab4:
         st.subheader("💊 VETMED Survey")
         st.caption("Indicate amount of purchase per month")
@@ -808,25 +1060,20 @@ def render_market_survey_view(user):
                     st.number_input(cat, min_value=0, step=1, key=key, label_visibility="visible")
             st.divider()
 
-    # =============================================================================
-    # TAB 5: REVIEW & SUBMIT
-    # =============================================================================
     with tab5:
         st.subheader("✅ Review & Submit")
 
-        # ✅ Read values from session state
         store_name = str(st.session_state.get("ms_store_name", "")).strip().upper()
         owner_name = str(st.session_state.get("ms_owner_name", "")).strip().upper()
         street = str(st.session_state.get("ms_street", "")).strip().upper()
         barangay = str(st.session_state.get("ms_barangay", "")).strip().upper()
-        city = str(st.session_state.get("ms_city", "")).strip().upper()  # ✅ NEW: Read City
+        city = str(st.session_state.get("ms_city", "")).strip().upper()
         province = str(st.session_state.get("ms_province", "")).strip().upper()
         contact_no = str(st.session_state.get("ms_contact", "")).strip()
         
         bday_val = st.session_state.get("ms_bday")
         owner_bday = bday_val.strftime("%Y-%m-%d") if bday_val and isinstance(bday_val, date) else ""
 
-        # ✅ Build payload with City
         payload = {
             "timestamp": datetime.now(PHT).strftime("%Y-%m-%d %H:%M:%S"),
             "username": user.get("username", ""),
@@ -835,7 +1082,7 @@ def render_market_survey_view(user):
             "owner_name": owner_name,
             "street": street,
             "barangay": barangay,
-            "city": city,  # ✅ NEW: Add City to payload
+            "city": city,
             "province": province,
             "contact_no": contact_no,
             "owner_bday": owner_bday,
@@ -845,13 +1092,11 @@ def render_market_survey_view(user):
             "distribution": str(st.session_state.get("ms_dist_type", "")).strip(),
         }
 
-        # ✅ SUB-DEALERS
         sub_dealers = st.session_state.get("ms_direct_dealers", [])
         payload["sub_dealer_count"] = len(sub_dealers)
         for i in range(1, 11):
             payload[f"sub_dealer_{i}"] = sub_dealers[i-1] if i <= len(sub_dealers) else ""
 
-        # ✅ FEEDS
         def process_feeds(prefix, brands):
             for brand in brands:
                 ss_brand = brand.replace(' ', '_').replace('-', '_')
@@ -876,7 +1121,6 @@ def render_market_survey_view(user):
         process_feeds("gamefowl_ix24_pack", ["THUNDERBIRD", "SALTO", "SAGUPAAN", "WARHAWK", "OTHERS"])
         process_feeds("broiler_50_kg", ["PILMICO", "GREENHILLS", "GMC", "UNIFEEDS", "OTHERS"])
 
-        # ✅ PETFOOD
         for brand in ["PEDIGREE", "TOP BREED", "BEEF PRO", "BUDDY'S CHOMP", "DERBY", "YUM YUM", "DOGGY WOGGY", "VITALITY", "ROYAL CANIN", "BOW WOW", "WOOFY", "SPECIAL DOG", "OTHERS"]:
             safe = brand.replace(' ', '_')
             payload[f"pet_dog_pup_{safe}"] = int(st.session_state.get(f"ms_pet_dog_pup_{safe}", 0))
@@ -886,7 +1130,6 @@ def render_market_survey_view(user):
             safe = brand.replace(' ', '_')
             payload[f"pet_cat_{safe}"] = int(st.session_state.get(f"ms_pet_cat_{safe}", 0))
 
-        # ✅ VETMED
         for brand in ["UNIVET", "EXCELLENCE", "LDI", "SAGUPAAN", "BATTLECOCK", "TRYCO", "OTHERS"]:
             for cat in ["WSP", "INJECTABLE", "DISINFECTANT", "GAMEFOWL_PREP"]:
                 safe_brand = brand.replace(' ', '_')
@@ -894,25 +1137,14 @@ def render_market_survey_view(user):
                 key = f"ms_vet_{safe_brand}_{safe_cat}"
                 payload[f"vet_{safe_brand}_{safe_cat}"] = int(st.session_state.get(key, 0))
 
-
-        if "ms_initialized" not in st.session_state:
-            st.session_state.ms_initialized = True
-            st.session_state.ms_store_name = ""
-            st.session_state.ms_owner_name = ""
-            # ... (other initializations)
-            st.session_state.ms_save_success = False  # ✅ Add this line
-
-        # ✅ VALIDATION
         if st.button("💾 Save to Google Sheets", type="primary", use_container_width=True):
             with st.spinner("Saving..."):
                 user_branch = user.get("branch", "")
                 success = append_to_sheet(user_branch, payload)
                 
                 if success:
-                    # ✅ Set success flag BEFORE clearing session state
                     st.session_state.ms_save_success = True
                     
-                    # Clear form data but keep success flag
                     for k in list(st.session_state.keys()):
                         if k.startswith("ms_") and k != "ms_save_success":
                             del st.session_state[k]
@@ -921,23 +1153,17 @@ def render_market_survey_view(user):
                 else:
                     st.error("❌ Failed to save.")
 
-        # ✅ Show success message or validation errors
         if st.session_state.get("ms_save_success", False):
             st.success("🎉 Data saved successfully! Form has been reset.")
             if st.button("➕ Submit Another Entry"):
                 st.session_state.ms_save_success = False
                 st.rerun()
         else:
-            # ✅ Only show validation errors when NOT in success state
             errors = []
             if not store_name: 
                 errors.append("Store Name is required")
             if not owner_name: 
                 errors.append("Owner's Name is required")
-            
-            # Only require sub-dealers for DIRECT-SERVED stores
-            # if payload["distribution"] == "DIRECT-SERVED" and payload["sub_dealer_count"] == 0:
-            #     errors.append("Please add at least 1 Sub-Dealer")
 
             if errors:
                 for e in errors: 
