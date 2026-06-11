@@ -385,22 +385,32 @@ def render_encoder_view(user):
         selected_branch = st.selectbox(
             "Select Target Branch", list(BRANCH_SHEETS.keys()))
 
-    # ✅ Reset form logic
+    # ✅ Reset form logic - MUST happen BEFORE widgets are rendered
     if st.session_state.get("reset_encoder_form", False):
-        for key in ["enc_name", "store_name", "product", "uom", "qty", "notes"]:
-            st.session_state[key] = None if key == "qty" else "-- Full Name --" if key == "enc_name" else "-- Select Customer --" if key == "store_name" else "-- Select Product --" if key == "product" else "-- Select Unit --" if key == "uom" else ""
+        # Reset to proper default values
+        st.session_state.enc_name = "-- Full Name --"
+        st.session_state.store_name = "-- Select Customer --"
+        st.session_state.product = "-- Select Product --"
+        st.session_state.uom = "-- Select Unit --"
+        st.session_state.qty = 0  # Use 0 instead of None
+        st.session_state.notes = ""
         st.session_state.reset_encoder_form = False
+        # Don't rerun here - let the widgets render with new values
 
     with st.expander("📝 Add Data Here"):
-        # ✅ Initialize session state defaults
-        defaults = {
-            "enc_name": "", "store_name": "-- Select Customer --",
-            "product": "-- Select Product --", "uom": "-- Select Unit --",
-            "qty": 0, "notes": ""
-        }
-        for key, default in defaults.items():
-            if key not in st.session_state:
-                st.session_state[key] = default
+        # ✅ Initialize session state defaults - only if not already set
+        if "enc_name" not in st.session_state:
+            st.session_state.enc_name = "-- Full Name --"
+        if "store_name" not in st.session_state:
+            st.session_state.store_name = "-- Select Customer --"
+        if "product" not in st.session_state:
+            st.session_state.product = "-- Select Product --"
+        if "uom" not in st.session_state:
+            st.session_state.uom = "-- Select Unit --"
+        if "qty" not in st.session_state:
+            st.session_state.qty = 0
+        if "notes" not in st.session_state:
+            st.session_state.notes = ""
 
         st.markdown("""
         <style>
@@ -477,6 +487,7 @@ def render_encoder_view(user):
                 if success:
                     st.success("✅ Data successfully saved!")
                     st.session_state.reset_encoder_form = True
+                    # Remove the st.rerun() here - let the reset logic handle it on next render
                     st.rerun()
                 else:
                     st.error("❌ Failed to save data. Please try again.")
