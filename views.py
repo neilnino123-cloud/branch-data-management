@@ -448,7 +448,7 @@ def render_moderator_view(user):
         tab_encoder, tab_survey = st.tabs(["📊 Encoder SMAHC Pullout", "📋 Market Survey Data"])
         
         with tab_encoder:
-            st.divider()
+            # st.divider()
             st.subheader("📝 All Transactions")
             st.caption("Complete transaction history")
 
