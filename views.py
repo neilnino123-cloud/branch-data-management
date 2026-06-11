@@ -335,7 +335,7 @@ def render_moderator_view(user):
         tab_survey = st.tabs(["📋 Market Survey Data"])[0]
         
         with tab_survey:
-            st.divider()
+            # st.divider()
             st.subheader("📝 All Market Surveys")
             st.caption("Complete market survey history")
 
