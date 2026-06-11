@@ -1054,29 +1054,38 @@ def render_market_survey_view(user):
                 if contact_input.strip():
                     validation_errors.append("Please enter a valid Contact Number first")
             
-            st.markdown("**Store Class (Avg. bags sold/month):**")
+                        st.markdown("**Store Class (Avg. bags sold/month):**")
             c1, c2, c3 = st.columns(3)
             
             # Class A - Only after B-Day is valid
             if bday_input and len([e for e in validation_errors if "20 years old" in e]) == 0:
-                class_a_input = c1.number_input("Class A (501+)", min_value=501, step=1, key="ms_class_a", 
+                class_a_input = c1.number_input("Class A (501+)", min_value=0, step=1, key="ms_class_a", 
                                               help="Enter number of bags sold (must be 501 or more)")
+                # Validate Class A range if user entered a value
+                if class_a_input > 0 and class_a_input < 501:
+                    validation_errors.append("Class A must be 501 or more bags")
             else:
-                class_a_input = c1.number_input("Class A (501+)", min_value=501, step=1, key="ms_class_a", disabled=True)
+                class_a_input = c1.number_input("Class A (501+)", min_value=0, step=1, key="ms_class_a", disabled=True)
             
             # Class B - Only after Class A is filled or skipped
             if bday_input and len([e for e in validation_errors if "20 years old" in e]) == 0:
-                class_b_input = c2.number_input("Class B (101-500)", min_value=101, max_value=500, step=1, key="ms_class_b",
+                class_b_input = c2.number_input("Class B (101-500)", min_value=0, step=1, key="ms_class_b",
                                               help="Enter number of bags sold (101-500)")
+                # Validate Class B range if user entered a value
+                if class_b_input > 0 and (class_b_input < 101 or class_b_input > 500):
+                    validation_errors.append("Class B must be between 101 and 500 bags")
             else:
-                class_b_input = c2.number_input("Class B (101-500)", min_value=101, max_value=500, step=1, key="ms_class_b", disabled=True)
+                class_b_input = c2.number_input("Class B (101-500)", min_value=0, step=1, key="ms_class_b", disabled=True)
             
             # Class C - Only after Class B is filled or skipped
             if bday_input and len([e for e in validation_errors if "20 years old" in e]) == 0:
-                class_c_input = c3.number_input("Class C (≤100)", min_value=0, max_value=100, step=1, key="ms_class_c",
+                class_c_input = c3.number_input("Class C (≤100)", min_value=0, step=1, key="ms_class_c",
                                               help="Enter number of bags sold (0-100)")
+                # Validate Class C range if user entered a value
+                if class_c_input > 100:
+                    validation_errors.append("Class C must be 100 bags or less")
             else:
-                class_c_input = c3.number_input("Class C (≤100)", min_value=0, max_value=100, step=1, key="ms_class_c", disabled=True)
+                class_c_input = c3.number_input("Class C (≤100)", min_value=0, step=1, key="ms_class_c", disabled=True)
 
         # Distribution Type - Always available
         st.selectbox("Distribution Type *", ["DIRECT-SERVED", "SUB-DEALER"], key="ms_dist_type")
