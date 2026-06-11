@@ -1054,7 +1054,7 @@ def render_market_survey_view(user):
                 if contact_input.strip():
                     validation_errors.append("Please enter a valid Contact Number first")
             
-                        st.markdown("**Store Class (Avg. bags sold/month):**")
+            st.markdown("**Store Class (Avg. bags sold/month):**")
             c1, c2, c3 = st.columns(3)
             
             # Class A - Only after B-Day is valid
