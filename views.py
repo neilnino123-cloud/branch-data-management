@@ -1006,15 +1006,32 @@ def render_market_survey_view(user):
                 validation_errors.append("Please fill in City first")
             
         with col2:
-            # Contact No. - Required, only after Province is filled, must be valid mobile number
+            # --- Helper function to force numbers only ---
+            def sanitize_contact_input():
+                # Get current value
+                val = st.session_state.get("ms_contact", "")
+                # Keep only digits (0-9)
+                sanitized = ''.join(c for c in val if c.isdigit())
+                # Update session state if it changed
+                if sanitized != val:
+                    st.session_state.ms_contact = sanitized
+
+            # Contact No. - Required, only after Province is filled
             if province_input.strip():
-                contact_input = st.text_input("Contact No. *", key="ms_contact", placeholder="09XX XXX XXXX")
+                contact_input = st.text_input(
+                    "Contact No. * (Numbers only)", 
+                    key="ms_contact", 
+                    placeholder="09XXXXXXXXX",
+                    on_change=sanitize_contact_input, # ✅ Forces numbers only
+                    help="Please enter digits only (e.g., 09171234567)"
+                )
+                
+                # Validate format after sanitization
                 if contact_input.strip():
-                    # Validate Philippine mobile number format (09XX XXX XXXX or 09XXXXXXXXX)
-                    import re
-                    contact_clean = contact_input.replace(" ", "").replace("-", "")
-                    if not re.match(r"^09\d{9}$", contact_clean):
-                        validation_errors.append("Please enter a valid Philippine mobile number (e.g., 0917 123 4567)")
+                    if not contact_input.startswith("09"):
+                        validation_errors.append("Mobile number must start with '09'")
+                    elif len(contact_input) != 11:
+                        validation_errors.append("Mobile number must be exactly 11 digits")
                 else:
                     validation_errors.append("Contact Number is required")
             else:
