@@ -76,7 +76,8 @@ LEYTE_ENCODERS = {
                   "GREGORIO CABELTE JR.",
                   "JAIME PACAYDE",
                   "JAYVEE BAGUNAS",
-                  "LEIGHMARK DAGOHOY",
+                  "LEIGHMARK DAGOHOY"
+                  "MARK WELL RAI LAKE",
                   "MELCHOR PALAJOREN"},
         "ley_dcat" : {"LORRAINE ANGELA CABILIC"},
         "ley_gfs": {"LEONIL LIBY APOR"}
