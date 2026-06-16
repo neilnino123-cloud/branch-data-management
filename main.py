@@ -4,7 +4,7 @@ from auth import get_current_user, logout
 from views import render_login_form, render_admin_view, render_moderator_view, render_encoder_view, render_market_survey_view
 
 # ✅ Cross-platform logo handling
-LOGO_PATH = "logo3.png" if os.path.exists("logo3.png") else None
+LOGO_PATH = "logo3.png" if os.path.exists("logo5 copy.png") else None
 
 st.set_page_config(
     page_title="Branch Data Manager",
@@ -22,8 +22,8 @@ def main():
 
     # Sidebar with logout
     with st.sidebar:
-        if os.path.exists("./logo4.png"):
-            st.logo("./logo4.png", size="large")
+        if os.path.exists("./logo5 copy.png"):
+            st.logo("./logo5 copy.png", size="large")
 
         st.success(f"Logged in as - {user['role'].capitalize()}")
 
