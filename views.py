@@ -20,7 +20,7 @@ def render_login_form():
         with st.container(border=True, key="login_form"):
             st.write("\n")
             with st.container(horizontal=True, horizontal_alignment="center"):
-                st.image("logo4.png" if st.file_uploader else "logo5 copy.png", width=250)
+                st.image("logo5 copy.png" if st.file_uploader else "logo5 copy.png", width=250)
             with st.container():
                 st.header("Please login to access your account", text_alignment="center")
                 with st.form("login_form", border=False):
