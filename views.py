@@ -1348,3 +1348,91 @@ def render_market_survey_view(user):
                     st.success("✅ All required fields completed.")
             else:
                 st.info("📝 Please fill in all required fields (marked with *) and click Save.")
+
+                # ✅ Display today's submissions for this branch
+                st.divider()
+                st.subheader("📊 Today's Submissions")
+                
+                try:
+                    # Get today's date
+                    today = date.today()
+                    
+                    # Fetch data for current branch
+                    df_today = get_sheet_data(user.get("branch", ""))
+                    
+                    if not df_today.empty:
+                        # Normalize columns
+                        df_today = normalize_df_columns(df_today)
+                        
+                        # Filter for today's date
+                        if "timestamp" in df_today.columns:
+                            df_today["date_only"] = pd.to_datetime(df_today["timestamp"], errors="coerce").dt.date
+                            df_today = df_today[df_today["date_only"] == today]
+                            df_today = df_today.drop(columns=["date_only"])
+                        
+                        if not df_today.empty:
+                            st.caption(f"Showing {len(df_today)} submission(s) for {today.strftime('%B %d, %Y')}")
+                            
+                            # Show only relevant columns
+                            display_cols = ["timestamp", "store_name", "owner_name", "distribution"]
+                            available_cols = [col for col in display_cols if col in df_today.columns]
+                            
+                            if available_cols:
+                                st.dataframe(df_today[available_cols], use_container_width=True)
+                            else:
+                                st.dataframe(df_today, use_container_width=True)
+                        else:
+                            st.info(f"ℹ️ No submissions yet for {today.strftime('%B %d, %Y')}")
+                    else:
+                        st.info("ℹ️ No data available for this branch")
+                except Exception as e:
+                    st.warning("⚠️ Unable to load today's submissions")
+
+                        # ✅ Display today's submissions for this branch
+                st.divider()
+                
+                # Refresh Data button
+                col_refresh, col_space = st.columns([1, 4])
+                with col_refresh:
+                    if st.button("🔄 Refresh Data", use_container_width=True):
+                        # Clear the cache for get_sheet_data
+                        get_sheet_data.clear()
+                        st.cache_data.clear()  # Clear all cached data
+                        st.rerun()
+                
+                st.subheader("📊 Today's Submissions")
+                
+                try:
+                    # Get today's date
+                    today = date.today()
+                    
+                    # Fetch data for current branch
+                    df_today = get_sheet_data(user.get("branch", ""))
+                    
+                    if not df_today.empty:
+                        # Normalize columns
+                        df_today = normalize_df_columns(df_today)
+                        
+                        # Filter for today's date
+                        if "timestamp" in df_today.columns:
+                            df_today["date_only"] = pd.to_datetime(df_today["timestamp"], errors="coerce").dt.date
+                            df_today = df_today[df_today["date_only"] == today]
+                            df_today = df_today.drop(columns=["date_only"])
+                        
+                        if not df_today.empty:
+                            st.caption(f"Showing {len(df_today)} submission(s) for {today.strftime('%B %d, %Y')}")
+                            
+                            # Show only relevant columns
+                            display_cols = ["timestamp", "store_name", "owner_name", "distribution"]
+                            available_cols = [col for col in display_cols if col in df_today.columns]
+                            
+                            if available_cols:
+                                st.dataframe(df_today[available_cols], use_container_width=True)
+                            else:
+                                st.dataframe(df_today, use_container_width=True)
+                        else:
+                            st.info(f"ℹ️ No submissions yet for {today.strftime('%B %d, %Y')}")
+                    else:
+                        st.info("ℹ️ No data available for this branch")
+                except Exception as e:
+                    st.warning("⚠️ Unable to load today's submissions")
