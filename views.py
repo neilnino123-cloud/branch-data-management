@@ -1285,8 +1285,18 @@ def render_market_survey_view(user):
                     st.error("❌ Failed to save.")
 
         if st.session_state.get("ms_save_success", False):
+            # ✅ 1. Pop-up notification at the top right (Very noticeable)
+            st.toast(" Data saved successfully to Google Sheets!", icon="")
+            
+            # ✅ 2. Celebration animation
+            st.balloons()
+            
+            # ✅ 3. Persistent success message on the screen
             st.success("🎉 Data saved successfully! Form has been reset.")
-            if st.button("➕ Submit Another Entry"):
+            st.info("👇 Click the button below to start a new survey.")
+            
+            # ✅ 4. Button to clear the success state
+            if st.button("➕ Submit Another Entry", type="primary", use_container_width=True):
                 st.session_state.ms_save_success = False
                 st.session_state.ms_attempted_submit = False
                 st.rerun()
