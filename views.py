@@ -1348,6 +1348,87 @@ def render_market_survey_view(user):
                     st.success("✅ All required fields completed.")
             else:
                 st.info("📝 Please fill in all required fields (marked with *) and click Save.")
+
+                # ✅ Market Survey Analytics for Current Branch
+                st.divider()
+                st.subheader(f"📊 {user.get('branch', 'Branch')} Market Survey Analytics")
+                
+                try:
+                    # Fetch all data for current branch
+                    df_analytics = get_sheet_data(user.get("branch", ""))
+                    
+                    if not df_analytics.empty:
+                        # Normalize columns
+                        df_analytics = normalize_df_columns(df_analytics)
+                        
+                        # Calculate metrics
+                        total_surveys = len(df_analytics)
+                        
+                        direct_served = 0
+                        sub_dealer = 0
+                        if "distribution" in df_analytics.columns:
+                            direct_served = len(df_analytics[df_analytics["distribution"] == "DIRECT-SERVED"])
+                            sub_dealer = len(df_analytics[df_analytics["distribution"] == "SUB-DEALER"])
+                        
+                        unique_stores = 0
+                        if "store_name" in df_analytics.columns:
+                            unique_stores = df_analytics["store_name"].nunique()
+                        
+                        # Display metrics in columns
+                        col1, col2, col3, col4 = st.columns(4)
+                        
+                        with col1:
+                            st.metric("Total Surveys", total_surveys)
+                        with col2:
+                            st.metric("Direct-Served", direct_served)
+                        with col3:
+                            st.metric("Sub-Dealer", sub_dealer)
+                        with col4:
+                            st.metric("Unique Stores", unique_stores)
+                        
+                        # Optional: Show distribution chart
+                        if direct_served > 0 or sub_dealer > 0:
+                            st.divider()
+                            st.subheader("📈 Distribution Breakdown")
+                            
+                            dist_data = {
+                                "Type": ["Direct-Served", "Sub-Dealer"],
+                                "Count": [direct_served, sub_dealer]
+                            }
+                            dist_df = pd.DataFrame(dist_data)
+                            
+                            fig = px.pie(dist_df, values="Count", names="Type", 
+                                        title=f"{user.get('branch', 'Branch')} - Distribution Type",
+                                        color_discrete_sequence=px.colors.qualitative.Set2)
+                            fig.update_layout(height=400)
+                            st.plotly_chart(fig, use_container_width=True)
+                        
+                        # Store Class Distribution
+                        if all(col in df_analytics.columns for col in ["class_a", "class_b", "class_c"]):
+                            st.divider()
+                            st.subheader("📊 Store Class Distribution")
+                            
+                            class_a_count = (pd.to_numeric(df_analytics["class_a"], errors='coerce').fillna(0).astype(int) > 0).sum()
+                            class_b_count = (pd.to_numeric(df_analytics["class_b"], errors='coerce').fillna(0).astype(int) > 0).sum()
+                            class_c_count = (pd.to_numeric(df_analytics["class_c"], errors='coerce').fillna(0).astype(int) > 0).sum()
+                            
+                            class_data = {
+                                "Class": ["Class A (501+)", "Class B (101-500)", "Class C (≤100)"],
+                                "Count": [class_a_count, class_b_count, class_c_count]
+                            }
+                            class_df = pd.DataFrame(class_data)
+                            
+                            fig = px.bar(class_df, x="Class", y="Count", 
+                                        title="Number of Stores by Class",
+                                        color="Class",
+                                        color_discrete_sequence=px.colors.qualitative.Pastel)
+                            fig.update_layout(height=400, showlegend=False)
+                            st.plotly_chart(fig, use_container_width=True)
+                            
+                    else:
+                        st.info("ℹ️ No survey data available yet for this branch")
+                except Exception as e:
+                    st.warning("⚠️ Unable to load analytics")
                 
                 # ✅ Display today's submissions for this branch
                 st.divider()
