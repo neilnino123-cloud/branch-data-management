@@ -1348,6 +1348,20 @@ def render_market_survey_view(user):
                     st.success("✅ All required fields completed.")
             else:
                 st.info("📝 Please fill in all required fields (marked with *) and click Save.")
+                
+                st.divider()
+                # Distribution Chart
+                if "distribution" in df_survey.columns:
+                    st.divider()
+                    st.subheader("📊 Distribution Type Breakdown")
+                    dist_counts = df_survey["distribution"].value_counts().reset_index()
+                    dist_counts.columns = ["Distribution Type", "Count"]
+                    
+                    fig = px.pie(dist_counts, values="Count", names="Distribution Type", 
+                                title=f"{ms_branch} - Distribution Type",
+                                color_discrete_sequence=px.colors.qualitative.Set2)
+                    fig.update_layout(height=400)
+                    st.plotly_chart(fig, use_container_width=True)
 
                 # ✅ Display today's submissions for this branch
                 st.divider()
@@ -1383,14 +1397,8 @@ def render_market_survey_view(user):
                         if not df_today.empty:
                             st.caption(f"Showing {len(df_today)} submission(s) for {today.strftime('%B %d, %Y')}")
                             
-                            # Show only relevant columns
-                            display_cols = ["timestamp", "store_name", "owner_name", "distribution"]
-                            available_cols = [col for col in display_cols if col in df_today.columns]
-                            
-                            if available_cols:
-                                st.dataframe(df_today[available_cols], use_container_width=True)
-                            else:
-                                st.dataframe(df_today, use_container_width=True)
+                            # ✅ Display ALL columns from Google Sheet
+                            st.dataframe(df_today, use_container_width=True)
                         else:
                             st.info(f"ℹ️ No submissions yet for {today.strftime('%B %d, %Y')}")
                     else:
