@@ -1349,20 +1349,6 @@ def render_market_survey_view(user):
             else:
                 st.info("📝 Please fill in all required fields (marked with *) and click Save.")
                 
-                st.divider()
-                # Distribution Chart
-                if "distribution" in df_survey.columns:
-                    st.divider()
-                    st.subheader("📊 Distribution Type Breakdown")
-                    dist_counts = df_survey["distribution"].value_counts().reset_index()
-                    dist_counts.columns = ["Distribution Type", "Count"]
-                    
-                    fig = px.pie(dist_counts, values="Count", names="Distribution Type", 
-                                title=f"{ms_branch} - Distribution Type",
-                                color_discrete_sequence=px.colors.qualitative.Set2)
-                    fig.update_layout(height=400)
-                    st.plotly_chart(fig, use_container_width=True)
-
                 # ✅ Display today's submissions for this branch
                 st.divider()
                 
