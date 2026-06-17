@@ -1266,32 +1266,36 @@ def render_market_survey_view(user):
                 key = f"ms_vet_{safe_brand}_{safe_cat}"
                 payload[f"vet_{safe_brand}_{safe_cat}"] = int(st.session_state.get(key, 0))
 
+                # ✅ SAVE BUTTON
         if st.button("💾 Save to Google Sheets", type="primary", use_container_width=True):
             st.session_state.ms_attempted_submit = True
             
             user_branch = user.get("branch", "")
+            
             with st.spinner(f"💾 Saving data to {user_branch} sheet... Please wait."):
                 success = append_to_sheet(user_branch, payload)
+            
+            if success:
+                st.session_state.ms_save_success = True
                 
-                if success:
-                    st.session_state.ms_save_success = True
-                    
-                    for k in list(st.session_state.keys()):
-                        if k.startswith("ms_") and k != "ms_save_success":
-                            del st.session_state[k]
-                    
-                    st.rerun()
-                else:
-                    st.error("❌ Failed to save.")
+                # Clear form data but keep success flag
+                for k in list(st.session_state.keys()):
+                    if k.startswith("ms_") and k not in ["ms_save_success"]:
+                        del st.session_state[k]
+                
+                st.rerun()  # ️ This reruns the app immediately
+            else:
+                st.error("❌ Failed to save.")
 
+        # ✅ SUCCESS MESSAGE (MUST BE OUTSIDE THE SAVE BUTTON IF BLOCK)
         if st.session_state.get("ms_save_success", False):
-            # ✅ 1. Pop-up notification at the top right (Very noticeable)
-            st.toast(" Data saved successfully to Google Sheets!", icon="")
+            # ✅ 1. Pop-up notification at the top right
+            st.toast("✅ Data saved successfully to Google Sheets!", icon="🎉")
             
             # ✅ 2. Celebration animation
             st.balloons()
             
-            # ✅ 3. Persistent success message on the screen
+            # ✅ 3. Persistent success message
             st.success("🎉 Data saved successfully! Form has been reset.")
             st.info("👇 Click the button below to start a new survey.")
             
