@@ -1269,8 +1269,8 @@ def render_market_survey_view(user):
         if st.button("💾 Save to Google Sheets", type="primary", use_container_width=True):
             st.session_state.ms_attempted_submit = True
             
-            with st.spinner("Saving..."):
-                user_branch = user.get("branch", "")
+            user_branch = user.get("branch", "")
+            with st.spinner(f"💾 Saving data to {user_branch} sheet... Please wait."):
                 success = append_to_sheet(user_branch, payload)
                 
                 if success:
