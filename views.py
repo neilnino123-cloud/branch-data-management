@@ -1385,45 +1385,6 @@ def render_market_survey_view(user):
                             st.metric("Sub-Dealer", sub_dealer)
                         with col4:
                             st.metric("Unique Stores", unique_stores)
-                        
-                        # Optional: Show distribution chart
-                        if direct_served > 0 or sub_dealer > 0:
-                            st.divider()
-                            st.subheader("📈 Distribution Breakdown")
-                            
-                            dist_data = {
-                                "Type": ["Direct-Served", "Sub-Dealer"],
-                                "Count": [direct_served, sub_dealer]
-                            }
-                            dist_df = pd.DataFrame(dist_data)
-                            
-                            fig = px.pie(dist_df, values="Count", names="Type", 
-                                        title=f"{user.get('branch', 'Branch')} - Distribution Type",
-                                        color_discrete_sequence=px.colors.qualitative.Set2)
-                            fig.update_layout(height=400)
-                            st.plotly_chart(fig, use_container_width=True)
-                        
-                        # Store Class Distribution
-                        if all(col in df_analytics.columns for col in ["class_a", "class_b", "class_c"]):
-                            st.divider()
-                            st.subheader("📊 Store Class Distribution")
-                            
-                            class_a_count = (pd.to_numeric(df_analytics["class_a"], errors='coerce').fillna(0).astype(int) > 0).sum()
-                            class_b_count = (pd.to_numeric(df_analytics["class_b"], errors='coerce').fillna(0).astype(int) > 0).sum()
-                            class_c_count = (pd.to_numeric(df_analytics["class_c"], errors='coerce').fillna(0).astype(int) > 0).sum()
-                            
-                            class_data = {
-                                "Class": ["Class A (501+)", "Class B (101-500)", "Class C (≤100)"],
-                                "Count": [class_a_count, class_b_count, class_c_count]
-                            }
-                            class_df = pd.DataFrame(class_data)
-                            
-                            fig = px.bar(class_df, x="Class", y="Count", 
-                                        title="Number of Stores by Class",
-                                        color="Class",
-                                        color_discrete_sequence=px.colors.qualitative.Pastel)
-                            fig.update_layout(height=400, showlegend=False)
-                            st.plotly_chart(fig, use_container_width=True)
                             
                     else:
                         st.info("ℹ️ No survey data available yet for this branch")
