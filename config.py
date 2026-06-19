@@ -90,6 +90,7 @@ SAMAR_ENCODERS = {
                     "ARISTEO ASI",
                     "CLETUS JOMAR PENEDA",
                     "DONALD CABO",
+                    "EDISAR LIMBAWAN",
                     "JOHN LAWRENCE GUASIS",
                     "RALPH CARVAJAL",
                     "REDELON ABARRO",
