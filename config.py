@@ -57,6 +57,7 @@ PRODUCT_LIST = {
     "-- OTHERS --": {},
     "DOXA-V": {"PC", "BOX", "KL", "PAD"},
     "PARA-V": {"PC", "BOX", "KL", "PAD"},
+    "MULTI-V": {"PC", "BOX", "KL", "PAD"},
     "TRIMAX": {"PC", "BOX"},
     "MULTIMAX": {"PC", "BOX"},
     "ELECTROMAX": {"PC", "BOX"},
